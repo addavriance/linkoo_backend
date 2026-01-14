@@ -1,109 +1,110 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { OAuthProvider, AccountType } from '../types';
+import mongoose, {Schema, Document, model, Model} from 'mongoose';
+import {OAuthProvider, AccountType} from '../types';
 
 export interface IUserProfile {
-  name: string;
-  avatar?: string;
-  locale?: string;
+    name: string;
+    avatar?: string;
+    locale?: string;
 }
 
 export interface ISubscription {
-  plan: string;
-  expiresAt: Date;
-  stripeCustomerId?: string;
+    plan: string;
+    expiresAt: Date;
+    stripeCustomerId?: string;
 }
 
 export interface IUserSettings {
-  emailNotifications: boolean;
-  language: string;
+    emailNotifications: boolean;
+    language: string;
 }
 
 export interface IUser extends Document {
-  _id: mongoose.Types.ObjectId;
-  email: string;
-  provider: OAuthProvider;
-  providerId: string;
-  accountType: AccountType;
-  profile: IUserProfile;
-  subscription?: ISubscription;
-  settings: IUserSettings;
-  lastLoginAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
+    _id: mongoose.Types.ObjectId;
+    email: string;
+    provider: OAuthProvider;
+    providerId: string;
+    accountType: AccountType;
+    profile: IUserProfile;
+    subscription?: ISubscription;
+    settings: IUserSettings;
+    lastLoginAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const UserProfileSchema = new Schema<IUserProfile>(
-  {
-    name: { type: String, required: true, trim: true },
-    avatar: { type: String },
-    locale: { type: String, default: 'ru' },
-  },
-  { _id: false }
+    {
+        name: {type: String, required: true, trim: true},
+        avatar: {type: String},
+        locale: {type: String, default: 'ru'},
+    },
+    {_id: false}
 );
 
 const SubscriptionSchema = new Schema<ISubscription>(
-  {
-    plan: { type: String, required: true },
-    expiresAt: { type: Date, required: true },
-    stripeCustomerId: { type: String },
-  },
-  { _id: false }
+    {
+        plan: {type: String, required: true},
+        expiresAt: {type: Date, required: true},
+        stripeCustomerId: {type: String},
+    },
+    {_id: false}
 );
 
 const UserSettingsSchema = new Schema<IUserSettings>(
-  {
-    emailNotifications: { type: Boolean, default: true },
-    language: { type: String, default: 'ru' },
-  },
-  { _id: false }
+    {
+        emailNotifications: {type: Boolean, default: true},
+        language: {type: String, default: 'ru'},
+    },
+    {_id: false}
 );
 
-const UserSchema = new Schema<IUser>(
-  {
-    email: {
-      type: String,
-      required: true,
-      lowercase: true,
-      trim: true,
-      index: true,
+export interface IUserModel extends Model<IUser> {}
+
+const UserSchema: Schema<IUser, IUserModel> = new Schema<IUser, IUserModel>(
+    {
+        email: {
+            type: String,
+            required: true,
+            lowercase: true,
+            trim: true,
+            index: true,
+        },
+        provider: {
+            type: String,
+            required: true,
+            enum: ['google', 'vk', 'discord', 'github'],
+        },
+        providerId: {
+            type: String,
+            required: true,
+        },
+        accountType: {
+            type: String,
+            enum: ['free', 'paid'],
+            default: 'free',
+        },
+        profile: {
+            type: UserProfileSchema,
+            required: true,
+        },
+        subscription: SubscriptionSchema,
+        settings: {
+            type: UserSettingsSchema,
+            default: () => ({
+                emailNotifications: true,
+                language: 'ru',
+            }),
+        },
+        lastLoginAt: {
+            type: Date,
+            default: Date.now,
+        },
     },
-    provider: {
-      type: String,
-      required: true,
-      enum: ['google', 'vk', 'discord', 'github'],
-    },
-    providerId: {
-      type: String,
-      required: true,
-    },
-    accountType: {
-      type: String,
-      enum: ['free', 'paid'],
-      default: 'free',
-    },
-    profile: {
-      type: UserProfileSchema,
-      required: true,
-    },
-    subscription: SubscriptionSchema,
-    settings: {
-      type: UserSettingsSchema,
-      default: () => ({
-        emailNotifications: true,
-        language: 'ru',
-      }),
-    },
-    lastLoginAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  {
-    timestamps: true,
-  }
+    {
+        timestamps: true,
+    }
 );
 
-// Compound unique index for OAuth provider + providerId
-UserSchema.index({ provider: 1, providerId: 1 }, { unique: true });
+UserSchema.index({provider: 1, providerId: 1}, {unique: true});
 
-export const User = mongoose.model<IUser>('User', UserSchema);
+export const User = model<IUser, IUserModel>('User', UserSchema);
