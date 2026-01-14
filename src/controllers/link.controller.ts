@@ -1,165 +1,165 @@
-import { Request, Response, NextFunction } from 'express';
+import {Request, Response, NextFunction} from 'express';
 import * as linkService from '../services/link.service';
-import { successResponse, paginatedResponse } from '../utils/response';
-import { AppError } from '../utils/errors';
-import { env } from '../config/env';
+import {successResponse, paginatedResponse} from '../utils/response';
+import {AppError} from '../utils/errors';
+import {env} from '../config/env';
 
 export const createLink = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    const link = await linkService.createLink(req.body, req.userId);
-    res.status(201).json(successResponse(link));
-  } catch (error) {
-    next(error);
-  }
+    try {
+        const link = await linkService.createLink(req.body, req.userId);
+        res.status(201).json(successResponse(link));
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getLink = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    const { slug } = req.params;
-    const subdomain = req.query.subdomain as string | undefined;
+    try {
+        const {slug} = req.params;
+        const subdomain = req.query.subdomain as string | undefined;
 
-    const link = await linkService.getLinkBySlug(slug, subdomain);
+        const link = await linkService.getLinkBySlug(slug, subdomain);
 
-    // Don't expose click details in public response
-    const publicLink = {
-      slug: link.slug,
-      targetType: link.targetType,
-      subdomain: link.subdomain,
-      createdAt: link.createdAt,
-    };
+        // Don't expose click details in public response
+        const publicLink = {
+            slug: link.slug,
+            targetType: link.targetType,
+            subdomain: link.subdomain,
+            createdAt: link.createdAt,
+        };
 
-    res.json(successResponse(publicLink));
-  } catch (error) {
-    next(error);
-  }
+        res.json(successResponse(publicLink));
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getMyLinks = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    if (!req.userId) {
-      throw new AppError('Authentication required', 401);
+    try {
+        if (!req.userId) {
+            throw new AppError('Authentication required', 401);
+        }
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+
+        const {links, total} = await linkService.getUserLinks(
+            req.userId,
+            page,
+            limit
+        );
+
+        res.json(paginatedResponse(links, page, limit, total));
+    } catch (error) {
+        next(error);
     }
-
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const { links, total } = await linkService.getUserLinks(
-      req.userId,
-      page,
-      limit
-    );
-
-    res.json(paginatedResponse(links, page, limit, total));
-  } catch (error) {
-    next(error);
-  }
 };
 
 export const updateLink = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    if (!req.userId) {
-      throw new AppError('Authentication required', 401);
-    }
+    try {
+        if (!req.userId) {
+            throw new AppError('Authentication required', 401);
+        }
 
-    const { slug } = req.params;
-    const link = await linkService.updateLink(slug, req.userId, req.body);
-    res.json(successResponse(link));
-  } catch (error) {
-    next(error);
-  }
+        const {slug} = req.params;
+        const link = await linkService.updateLink(slug, req.userId, req.body);
+        res.json(successResponse(link));
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const deleteLink = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    if (!req.userId) {
-      throw new AppError('Authentication required', 401);
-    }
+    try {
+        if (!req.userId) {
+            throw new AppError('Authentication required', 401);
+        }
 
-    const { slug } = req.params;
-    await linkService.deleteLink(slug, req.userId);
-    res.json(successResponse({ message: 'Link deleted successfully' }));
-  } catch (error) {
-    next(error);
-  }
+        const {slug} = req.params;
+        await linkService.deleteLink(slug, req.userId);
+        res.json(successResponse({message: 'Link deleted successfully'}));
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getLinkStats = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    if (!req.userId) {
-      throw new AppError('Authentication required', 401);
-    }
+    try {
+        if (!req.userId) {
+            throw new AppError('Authentication required', 401);
+        }
 
-    const { slug } = req.params;
-    const stats = await linkService.getLinkStats(slug, req.userId);
-    res.json(successResponse(stats));
-  } catch (error) {
-    next(error);
-  }
+        const {slug} = req.params;
+        const stats = await linkService.getLinkStats(slug, req.userId);
+        res.json(successResponse(stats));
+    } catch (error) {
+        next(error);
+    }
 };
 
 // Redirect handler
 export const redirect = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    const { slug } = req.params;
+    try {
+        const {slug} = req.params;
 
-    // Extract subdomain from host if present
-    const host = req.hostname;
-    let subdomain: string | undefined;
+        // Extract subdomain from host if present
+        const host = req.hostname;
+        let subdomain: string | undefined;
 
-    // Check if this is a subdomain request (e.g., username.linkoo.dev)
-    const parts = host.split('.');
-    if (parts.length > 2 && !['www', 'api'].includes(parts[0])) {
-      subdomain = parts[0];
+        // Check if this is a subdomain request (e.g., username.linkoo.dev)
+        const parts = host.split('.');
+        if (parts.length > 2 && !['www', 'api'].includes(parts[0])) {
+            subdomain = parts[0];
+        }
+
+        // Track click analytics
+        const analytics = {
+            userAgent: req.headers['user-agent'],
+            referer: req.headers.referer,
+        };
+
+        // Track the click asynchronously
+        linkService.trackClick(slug, analytics).catch(console.error);
+
+        // Get redirect target
+        const target = await linkService.getRedirectTarget(slug, subdomain);
+
+        // If it's a card view, redirect to frontend
+        if (target.startsWith('/view/')) {
+            return res.redirect(`${env.FRONTEND_URL}${target}`);
+        }
+
+        // External URL redirect
+        res.redirect(target);
+    } catch (error) {
+        next(error);
     }
-
-    // Track click analytics
-    const analytics = {
-      userAgent: req.headers['user-agent'],
-      referer: req.headers.referer,
-    };
-
-    // Track the click asynchronously
-    linkService.trackClick(slug, analytics).catch(console.error);
-
-    // Get redirect target
-    const target = await linkService.getRedirectTarget(slug, subdomain);
-
-    // If it's a card view, redirect to frontend
-    if (target.startsWith('/view/')) {
-      return res.redirect(`${env.FRONTEND_URL}${target}`);
-    }
-
-    // External URL redirect
-    res.redirect(target);
-  } catch (error) {
-    next(error);
-  }
 };
