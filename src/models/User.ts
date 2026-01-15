@@ -21,6 +21,7 @@ export interface IUserSettings {
 export interface IUser extends Document {
     _id: mongoose.Types.ObjectId;
     email: string;
+    phone: string;
     provider: OAuthProvider;
     providerId: string;
     accountType: AccountType;
@@ -64,7 +65,14 @@ const UserSchema: Schema<IUser, IUserModel> = new Schema<IUser, IUserModel>(
     {
         email: {
             type: String,
-            required: true,
+            required: false,
+            lowercase: true,
+            trim: true,
+            index: true,
+        },
+        phone: {
+            type: String,
+            required: false,
             lowercase: true,
             trim: true,
             index: true,
@@ -72,7 +80,7 @@ const UserSchema: Schema<IUser, IUserModel> = new Schema<IUser, IUserModel>(
         provider: {
             type: String,
             required: true,
-            enum: ['google', 'vk', 'discord', 'github'],
+            enum: ['google', 'vk', 'discord', 'github', 'max'],
         },
         providerId: {
             type: String,

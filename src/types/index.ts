@@ -1,6 +1,6 @@
 import {IUser} from '../models/User';
 
-export type OAuthProvider = 'google' | 'vk' | 'discord' | 'github';
+export type OAuthProvider = 'google' | 'vk' | 'discord' | 'github' | 'max';
 
 export type AccountType = 'free' | 'paid';
 
@@ -53,7 +53,8 @@ export interface TokenPayload {
 }
 
 export interface OAuthUserData {
-    email: string;
+    email?: string;
+    phone?: string;
     name: string;
     avatar?: string;
     providerId: string;
