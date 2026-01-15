@@ -1,11 +1,13 @@
 import {Card, ICard} from '../models/Card';
 import {CreateCardInput, UpdateCardInput} from '../validators/card.validator';
 import {AppError, NotFoundError, ForbiddenError} from '../utils/errors';
+import {ShortenedLink} from '../models/ShortenedLink';
+import {createSlug} from '../utils/slugGenerator';
 
 export const createCard = async (
     userId: string,
     data: CreateCardInput
-): Promise<ICard> => {
+): Promise<ICard & { slug?: string }> => {
     const card = await Card.create({
         userId,
         ...data,
@@ -16,13 +18,27 @@ export const createCard = async (
         },
     });
 
-    return card;
+    // Автоматически создаем короткую ссылку для карточки
+    let slug = createSlug();
+    while (await ShortenedLink.findOne({slug})) {
+        slug = createSlug();
+    }
+
+    await ShortenedLink.create({
+        userId,
+        targetType: 'card',
+        cardId: card._id,
+        slug,
+    });
+
+    // Возвращаем карточку со slug
+    return Object.assign(card.toObject(), { slug });
 };
 
 export const getCardById = async (
     cardId: string,
     requesterId?: string
-): Promise<ICard> => {
+): Promise<ICard & { slug?: string }> => {
     const card = await Card.findOne({
         _id: cardId,
         isActive: true,
@@ -36,14 +52,20 @@ export const getCardById = async (
         throw new ForbiddenError('This card is private');
     }
 
-    return card;
+    // Добавляем slug
+    const link = await ShortenedLink.findOne({
+        cardId: card._id,
+        isActive: true,
+    }).select('slug');
+
+    return Object.assign(card.toObject(), { slug: link?.slug });
 };
 
 export const getUserCards = async (
     userId: string,
     page: number = 1,
     limit: number = 10
-): Promise<{ cards: ICard[]; total: number }> => {
+): Promise<{ cards: Array<ICard & { slug?: string }>; total: number }> => {
     const skip = (page - 1) * limit;
 
     const [cards, total] = await Promise.all([
@@ -54,7 +76,19 @@ export const getUserCards = async (
         Card.countDocuments({userId, isActive: true}),
     ]);
 
-    return {cards, total};
+    // Добавляем slug к каждой карточке
+    const cardsWithSlugs = await Promise.all(
+        cards.map(async (card) => {
+            const link = await ShortenedLink.findOne({
+                cardId: card._id,
+                isActive: true,
+            }).select('slug');
+
+            return Object.assign(card.toObject(), { slug: link?.slug });
+        })
+    );
+
+    return {cards: cardsWithSlugs, total};
 };
 
 export const updateCard = async (
@@ -129,3 +163,4 @@ export const getPublicCards = async (
 
     return {cards, total};
 };
+
