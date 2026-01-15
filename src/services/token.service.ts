@@ -58,7 +58,7 @@ export const refreshAccessToken = async (
         token: refreshToken,
         isRevoked: false,
         expiresAt: {$gt: new Date()},
-    }).populate<{ userId: IUser }>('userId') as IRefreshToken;
+    }).populate<{ userId: IUser }>('userId');
 
     if (!storedToken || !storedToken.userId) {
         return null;
