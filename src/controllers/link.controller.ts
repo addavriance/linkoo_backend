@@ -32,6 +32,8 @@ export const getLink = async (
         const publicLink = {
             slug: link.slug,
             targetType: link.targetType,
+            originalUrl: link.originalUrl,
+            cardId: link.cardId?.toString(),
             subdomain: link.subdomain,
             createdAt: link.createdAt,
         };
@@ -121,7 +123,34 @@ export const getLinkStats = async (
     }
 };
 
-// Redirect handler
+export const getLinkByCardId = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        if (!req.userId) {
+            throw new AppError('Authentication required', 401);
+        }
+
+        const {cardId} = req.params;
+        const link = await linkService.getLinkByCardId(cardId, req.userId);
+
+        if (!link) {
+            return res.json(successResponse({link: null}));
+        }
+
+        res.json(successResponse({
+            slug: link.slug,
+            createdAt: link.createdAt,
+            clickCount: link.clickCount,
+        }));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Redirect handler (только для внешних URL, карточки обрабатываются фронтендом)
 export const redirect = async (
     req: Request,
     res: Response,
@@ -152,13 +181,15 @@ export const redirect = async (
         // Get redirect target
         const target = await linkService.getRedirectTarget(slug, subdomain);
 
-        // If it's a card view, redirect to frontend
-        if (target.startsWith('/view/')) {
-            return res.redirect(`${env.FRONTEND_URL}${target}`);
+        // Для карточек - редирект на фронтенд, который сам обработает slug
+        if (target.isCard) {
+            // Если запрос пришел на api.linkoo.dev - редиректим на linkoo.dev
+            // Фронтенд сам обработает /:slug и покажет карточку
+            return res.redirect(`${env.FRONTEND_URL}/${slug}`);
         }
 
         // External URL redirect
-        res.redirect(target);
+        res.redirect(target.url);
     } catch (error) {
         next(error);
     }

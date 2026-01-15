@@ -183,18 +183,35 @@ export const getLinkStats = async (
     };
 };
 
+export const getLinkByCardId = async (
+    cardId: string,
+    userId: string
+): Promise<IShortenedLink | null> => {
+    const link = await ShortenedLink.findOne({
+        cardId,
+        userId,
+        isActive: true,
+    }) as IShortenedLink;
+
+    return link;
+};
+
 export const getRedirectTarget = async (
     slug: string,
     subdomain?: string
-): Promise<string> => {
+): Promise<{ url: string; isCard: boolean; cardId?: string }> => {
     const link = await getLinkBySlug(slug, subdomain);
 
     if (link.targetType === 'url' && link.originalUrl) {
-        return link.originalUrl;
+        return { url: link.originalUrl, isCard: false };
     }
 
     if (link.targetType === 'card' && link.cardId) {
-        return `/view/${link.cardId}`;
+        return {
+            url: `/view/${link.cardId}`,
+            isCard: true,
+            cardId: link.cardId.toString()
+        };
     }
 
     throw new AppError('Invalid link target', 500);

@@ -33,4 +33,6 @@ router.delete('/:slug', validate(deleteLinkSchema), linkController.deleteLink);
 
 router.get('/:slug/stats', linkController.getLinkStats);
 
+router.get('/card/:cardId', linkController.getLinkByCardId);
+
 export default router;
