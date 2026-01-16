@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import {IRefreshToken, RefreshToken} from '../models/RefreshToken';
+import {RefreshToken} from '../models/RefreshToken';
 import {IUser} from '../models/User';
 import {env} from '../config/env';
 import {TokenPayload, TokenPair} from '../types';
 
 const ACCESS_TOKEN_EXPIRY = '15m';
-const REFRESH_TOKEN_EXPIRY_DAYS = 7;
+const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
 export const generateTokenPair = async (
     user: IUser,
@@ -39,7 +39,7 @@ export const generateTokenPair = async (
     return {
         accessToken,
         refreshToken: refreshTokenValue,
-        expiresIn: 15 * 60,
+        expiresIn: 15 * 60, // 15 минут
     };
 };
 
