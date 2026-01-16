@@ -1,10 +1,14 @@
 import app from './app';
 import {env} from './config/env';
 import {connectDatabase} from './config/database';
+import {startTokenCleanup} from './utils/cleanup';
 
 const startServer = async () => {
     try {
         await connectDatabase();
+
+        startTokenCleanup(24);
+        console.log('Token cleanup service started');
 
         const port = parseInt(env.PORT);
         app.listen(port, () => {
