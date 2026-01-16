@@ -1,6 +1,49 @@
 import axios from 'axios';
+import * as crypto from 'crypto';
 import {env} from '../config/env';
 import {OAuthUserData} from '../types';
+
+interface VkOAuthStateEntry {
+    codeVerifier: string;
+    timeout: ReturnType<typeof setTimeout>;
+}
+
+const vkStateMap = new Map<string, VkOAuthStateEntry>();
+const VK_STATE_TTL_MS = 10 * 60 * 1000;
+
+const generatePKCE = () => {
+    const codeVerifier = crypto.randomBytes(32).toString('base64');
+    const base64UrlCodeVerifier = codeVerifier
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+    const hash = crypto.createHash('sha256').update(base64UrlCodeVerifier).digest('base64');
+    const codeChallenge = hash
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+    return {
+        codeVerifier: base64UrlCodeVerifier,
+        codeChallenge,
+        codeChallengeMethod: 'S256' as const,
+    };
+};
+
+const generateState = (): string => {
+    return crypto.randomBytes(16).toString('hex');
+};
+
+const removePortFromUrl = (url: string): string => {
+    try {
+        const urlObj = new URL(url);
+        urlObj.port = '';
+        return urlObj.toString();
+    } catch {
+        return url.replace(/:\d+/, '');
+    }
+};
 
 export const getGoogleAuthUrl = (): string => {
     if (!env.GOOGLE_CLIENT_ID) {
@@ -48,54 +91,141 @@ export const getGoogleUserData = async (code: string): Promise<OAuthUserData> =>
     };
 };
 
-export const getVkAuthUrl = (): string => {
+export const getVkAuthUrl = async (): Promise<string> => {
     if (!env.VK_CLIENT_ID) {
         throw new Error('VK OAuth not configured');
     }
 
+    const pkce = generatePKCE();
+    const state = generateState();
+
+    const timeout = setTimeout(() => vkStateMap.delete(state), VK_STATE_TTL_MS);
+    vkStateMap.set(state, { codeVerifier: pkce.codeVerifier, timeout });
+
+    const redirectUri = removePortFromUrl(`${env.API_URL}/api/auth/vk/callback`);
+
     const params = new URLSearchParams({
-        client_id: env.VK_CLIENT_ID,
-        redirect_uri: `${env.API_URL}/api/auth/vk/callback`,
-        display: 'page',
-        scope: 'email',
         response_type: 'code',
-        v: '5.131',
+        client_id: env.VK_CLIENT_ID,
+        redirect_uri: redirectUri,
+        state,
+        code_challenge: pkce.codeChallenge,
+        code_challenge_method: pkce.codeChallengeMethod,
+        scope: 'vkid.personal_info',
     });
-    return `https://oauth.vk.com/authorize?${params}`;
+
+    return `https://id.vk.com/authorize?${params}`;
 };
 
-export const getVkUserData = async (code: string): Promise<OAuthUserData> => {
-    if (!env.VK_CLIENT_ID || !env.VK_CLIENT_SECRET) {
+export const getVkUserData = async (
+    code: string,
+    state: string,
+    deviceId?: string
+): Promise<OAuthUserData> => {
+    if (!env.VK_CLIENT_ID) {
         throw new Error('VK OAuth not configured');
     }
 
-    const tokenResponse = await axios.get('https://oauth.vk.com/access_token', {
-        params: {
-            client_id: env.VK_CLIENT_ID,
-            client_secret: env.VK_CLIENT_SECRET,
-            redirect_uri: `${env.API_URL}/api/auth/vk/callback`,
-            code,
-        },
+    const entry = vkStateMap.get(state);
+    if (!entry) {
+        throw new Error('Invalid state parameter');
+    }
+
+    clearTimeout(entry.timeout);
+    vkStateMap.delete(state);
+
+    const codeVerifier = entry.codeVerifier;
+
+    const redirectUri = removePortFromUrl(`${env.API_URL}/api/auth/vk/callback`);
+
+    const tokenParams = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code_verifier: codeVerifier,
+        redirect_uri: redirectUri,
+        code,
+        client_id: env.VK_CLIENT_ID,
+        state,
     });
 
-    const {access_token, user_id, email} = tokenResponse.data;
+    if (deviceId) {
+        tokenParams.append('device_id', deviceId);
+    }
 
-    const userResponse = await axios.get('https://api.vk.com/method/users.get', {
-        params: {
-            user_ids: user_id,
-            fields: 'photo_200',
+    const tokenResponse = await axios.post(
+        'https://id.vk.ru/oauth2/auth',
+        tokenParams,
+        {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        }
+    );
+
+    if (tokenResponse.data.error) {
+        throw new Error(
+            `VK ID OAuth error: ${tokenResponse.data.error_description || tokenResponse.data.error}`
+        );
+    }
+
+    const {access_token} = tokenResponse.data;
+
+    const userParams = new URLSearchParams({
+        client_id: env.VK_CLIENT_ID,
+        access_token,
+    });
+
+    const userResponse = await axios.post(
+        'https://id.vk.ru/oauth2/user_info',
+        userParams,
+        {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        }
+    );
+
+    if (userResponse.data.error) {
+        throw new Error(
+            `VK ID profile error: ${userResponse.data.error_description || userResponse.data.error}`
+        );
+    }
+
+    const user = userResponse.data.user;
+
+    // получаем username через VK API, потом нужно прокидывать в почту, но это все равно эвристика
+    let username: string | null = null;
+    try {
+        const vkApiParams = new URLSearchParams({
+            fields: 'screen_name',
             access_token,
             v: '5.131',
-        },
-    });
+        });
 
-    const user = userResponse.data.response[0];
+        const vkApiResponse = await axios.post(
+            'https://api.vk.ru/method/users.get',
+            vkApiParams,
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            }
+        );
+
+        if (vkApiResponse.data.response?.[0]?.screen_name) {
+            username = vkApiResponse.data.response[0].screen_name;
+        }
+    } catch (error) {
+        console.error('Failed to get VK username:', error);
+    }
 
     return {
-        email: email || `${user_id}@vk.com`,
-        name: `${user.first_name} ${user.last_name}`,
-        avatar: user.photo_200,
-        providerId: String(user_id),
+        email: user.email || `${user.user_id}@vk.com`,
+        name:
+            user.first_name && user.last_name
+                ? `${user.first_name} ${user.last_name}`
+                : user.first_name || 'VK User',
+        avatar: user.avatar,
+        providerId: user.user_id,
     };
 };
 
