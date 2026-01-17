@@ -11,6 +11,7 @@ import {successResponse} from '../utils/response';
 import {AppError} from '../utils/errors';
 import {env} from '../config/env';
 import {OAuthProvider, OAuthUserData} from '../types';
+import {OneMeAuthSession, UserAgentData} from "../services/MAXAuth.service";
 
 // Helper to handle OAuth callback
 const handleOAuthCallback = async (
@@ -27,8 +28,14 @@ const handleOAuthCallback = async (
 
     if (user) {
         // Update existing user
-        user.email = userData.email;
+        if (userData.email)
+            user.email = userData.email;
+
+        if (userData.phone)
+            user.phone = userData.phone;
+
         user.profile.name = userData.name;
+
         if (userData.avatar) {
             user.profile.avatar = userData.avatar;
         }
@@ -36,8 +43,12 @@ const handleOAuthCallback = async (
         await user.save();
     } else {
         // Create new user
+        const email = userData.email;
+        const phone = userData.phone;
+
         user = await User.create({
-            email: userData.email,
+            email,
+            phone,
             provider,
             providerId: userData.providerId,
             profile: {
@@ -86,9 +97,13 @@ export const googleCallback = async (
 };
 
 // VK OAuth
-export const vkAuth = (_req: Request, res: Response) => {
-    const authUrl = oauthService.getVkAuthUrl();
-    res.redirect(authUrl);
+export const vkAuth = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const authUrl = await oauthService.getVkAuthUrl();
+        res.redirect(authUrl);
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const vkCallback = async (
@@ -97,12 +112,18 @@ export const vkCallback = async (
     next: NextFunction
 ) => {
     try {
-        const {code} = req.query;
+        const {code, state, device_id} = req.query;
+
         if (!code || typeof code !== 'string') {
             throw new AppError('Authorization code not provided', 400);
         }
 
-        const userData = await oauthService.getVkUserData(code);
+        if (!state || typeof state !== 'string') {
+            throw new AppError('State parameter not provided', 400);
+        }
+
+        const deviceId = typeof device_id === 'string' ? device_id : undefined;
+        const userData = await oauthService.getVkUserData(code, state, deviceId);
         await handleOAuthCallback('vk', userData, req, res);
     } catch (error) {
         next(error);
@@ -152,6 +173,71 @@ export const githubCallback = async (
 
         const userData = await oauthService.getGithubUserData(code);
         await handleOAuthCallback('github', userData, req, res);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// MAX QRCode auth
+
+const sessions = new Map<string, OneMeAuthSession>();
+
+export const maxAuth = (req: Request, res: Response, next: NextFunction) => {
+    const sessionId = Math.random().toString(36).substring(7);
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // для nginx
+    res.flushHeaders?.();
+    res.write('\n');
+
+    const userAgent: UserAgentData = req.body?.userAgent || {
+        deviceType: 'WEB',
+        locale: req.headers['accept-language']?.split(',')[0] || 'ru',
+        deviceLocale: 'ru',
+        osVersion: 'macOS',
+        deviceName: 'Chrome',
+        headerUserAgent: req.headers['user-agent'] || '',
+        appVersion: '26.2.1',
+        screen: '1920x1080 2.0x',
+        timezone: 'Europe/Moscow'
+    };
+
+    const session = new OneMeAuthSession(sessionId, userAgent, res);
+    sessions.set(sessionId, session);
+    session.start();
+
+    req.on('close', () => {
+        // sessions.delete(sessionId);
+        console.log(`Session ${sessionId} closed`);
+    });
+}
+
+export const maxCallback = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const sessionId =
+            typeof req.query.sessionId === 'string'
+                ? req.query.sessionId
+                : null;
+
+        const session = sessions.get(sessionId!);
+
+        if (!session) {
+            throw new AppError('Session id not provided', 400);
+        }
+
+        if (!session.userData) {
+            throw new AppError('Session not authorized yet', 400);
+        }
+
+        const userData = session.userData;
+
+        await handleOAuthCallback('max', userData, req, res);
     } catch (error) {
         next(error);
     }
