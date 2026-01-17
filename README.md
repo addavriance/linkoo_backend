@@ -1,157 +1,76 @@
-# Linkoo Backend
+# Linkoo Backend API
 
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
-![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white)
+RESTful API для платформы цифровых визиток Linkoo.
 
-Backend API для сервиса цифровых визиток и сокращения ссылок.
+## 🚀 Особенности
 
-## Описание
+- **OAuth 2.0**: Google, VK, Discord, GitHub
+- **JWT Authentication**: Access & Refresh tokens
+- **MongoDB**: База данных
+- **TypeScript**: Полная типизация
+- **Express**: Web framework + Zod validation
 
-Linkoo — платформа для создания персонализированных цифровых визиток и управления короткими ссылками. API предоставляет функциональность для:
+## 📦 Установка
 
-- Создания и управления визитками с кастомными темами
-- Сокращения ссылок с аналитикой переходов
-- OAuth авторизации через популярные сервисы
-- Управления профилями и настройками приватности
-
-## Стек технологий
-
-**Runtime & Framework:**
-- Node.js + TypeScript
-- Express.js
-
-**База данных:**
-- MongoDB + Mongoose
-
-**Авторизация:**
-- JWT (Access + Refresh tokens)
-- OAuth 2.0 (Google, VK, Discord, GitHub)
-
-**Валидация & Безопасность:**
-- Zod для схем валидации
-- Helmet для HTTP заголовков
-- Rate limiting для защиты от перегрузок
-- CORS
-
-**Дополнительно:**
-- Compression для оптимизации ответов
-- Morgan для логирования
-- Nanoid для генерации slug'ов
-
-## Основной функционал
-
-### Визитки
-- Создание карточек с контактной информацией
-- Поддержка 12+ социальных сетей
-- Кастомизация темы и цветовой схемы
-- Настройки видимости полей
-- Счетчик просмотров
-
-### Короткие ссылки
-- Генерация коротких ссылок на внешние URL или карточки
-- Аналитика кликов (User-Agent, Referer)
-- Кастомные slug'и
-- Срок действия ссылок
-
-### Авторизация
-- Регистрация/вход по email + пароль
-- OAuth через сторонние сервисы
-- Refresh token rotation
-- Типы аккаунтов (FREE/PRO/PREMIUM)
-
-## Установка и запуск
-
-```bash
-# Установка зависимостей
+\`\`\`bash
 npm install
+\`\`\`
 
-# Настройка переменных окружения
-cp .env.example .env
+## ⚙️ Конфигурация
 
-# Запуск в режиме разработки
-npm run dev
+Создайте файл \`.env\` на основе \`.env.example\`:
 
-# Сборка проекта
-npm run build
-
-# Запуск production версии
-npm start
-```
-
-## Переменные окружения
-
-```env
+\`\`\`env
 NODE_ENV=development
 PORT=3001
 API_URL=http://localhost:3001
 FRONTEND_URL=http://localhost:3000
 
 MONGODB_URI=mongodb://localhost:27017/linkoo
+JWT_SECRET=your-secret-key-at-least-32-characters-long
 
-JWT_SECRET=your-secret-key-min-32-chars
+# OAuth Credentials (получите на сайтах провайдеров)
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+VK_CLIENT_ID=...
+VK_CLIENT_SECRET=...
+DISCORD_CLIENT_ID=...
+DISCORD_CLIENT_SECRET=...
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+\`\`\`
 
-# OAuth (опционально)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-VK_CLIENT_ID=
-VK_CLIENT_SECRET=
-DISCORD_CLIENT_ID=
-DISCORD_CLIENT_SECRET=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-```
+## 🏃 Запуск
 
-## API Endpoints
+\`\`\`bash
+# Development
+npm run dev
 
-### Авторизация
-- `POST /api/auth/register` - Регистрация
-- `POST /api/auth/login` - Вход
-- `POST /api/auth/refresh` - Обновление токена
-- `POST /api/auth/logout` - Выход
-- `GET /api/auth/:provider` - OAuth авторизация
+# Production
+npm run build
+npm start
+\`\`\`
 
-### Пользователи
-- `GET /api/users/me` - Текущий профиль
-- `PUT /api/users/me` - Обновление профиля
-- `DELETE /api/users/me` - Удаление аккаунта
+## 📚 API Endpoints
 
-### Визитки
-- `GET /api/cards` - Список визиток
-- `POST /api/cards` - Создание визитки
-- `GET /api/cards/:id` - Получение визитки
-- `PUT /api/cards/:id` - Обновление визитки
-- `DELETE /api/cards/:id` - Удаление визитки
+### Auth
+- GET /api/auth/{provider} - OAuth redirect
+- GET /api/auth/{provider}/callback - OAuth callback
+- POST /api/auth/refresh - Refresh token
+- POST /api/auth/logout - Logout
+- GET /api/auth/me - Get current user
 
-### Ссылки
-- `GET /api/links` - Список ссылок
-- `POST /api/links` - Создание короткой ссылки
-- `GET /api/links/:slug` - Информация о ссылке
-- `DELETE /api/links/:slug` - Удаление ссылки
-- `GET /:slug` - Редирект по короткой ссылке
+### Cards (Protected)
+- GET /api/cards - Get user's cards
+- POST /api/cards - Create card
+- PUT /api/cards/:id - Update card
+- DELETE /api/cards/:id - Delete card
 
-## Структура проекта
+### Links (Protected)
+- POST /api/links - Create short link
+- GET /api/links - Get user's links
+- DELETE /api/links/:id - Delete link
 
-```
-src/
-├── config/          # Конфигурация (DB, CORS, ENV)
-├── controllers/     # Контроллеры маршрутов
-├── middleware/      # Middleware (auth, validation, rate limiting)
-├── models/          # Mongoose модели
-├── routes/          # Определение маршрутов
-├── services/        # Бизнес-логика
-├── utils/           # Утилиты и хелперы
-├── validators/      # Zod схемы валидации
-├── types/           # TypeScript типы
-├── app.ts           # Express приложение
-└── server.ts        # Точка входа
-```
+## 🔗 Frontend Repository
 
-## Модели данных
-
-- **User** - Пользователи с OAuth провайдерами
-- **Card** - Цифровые визитки
-- **ShortenedLink** - Короткие ссылки
-- **RefreshToken** - JWT refresh токены
+Frontend: \`/Users/netia/WebstormProjects/linkoo\`
