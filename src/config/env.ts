@@ -24,6 +24,10 @@ const envSchema = z.object({
 
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
+
+    YUKASSA_SHOP_ID: z.string().optional(),
+    YUKASSA_SECRET_KEY: z.string().optional(),
+    YUKASSA_RETURN_URL: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

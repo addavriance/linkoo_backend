@@ -1,4 +1,5 @@
 import express, {Application} from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -38,6 +39,11 @@ app.get('/health', (_req, res) => {
 app.use('/api', apiLimiter);
 
 app.use('/api', routes);
+
+app.use('/uploads', (_req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.resolve(__dirname, '..', 'uploads')));
 
 app.use('/', redirectRoutes);
 
