@@ -12,15 +12,15 @@ RESTful API для платформы цифровых визиток Linkoo.
 
 ## 📦 Установка
 
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 ## ⚙️ Конфигурация
 
-Создайте файл \`.env\` на основе \`.env.example\`:
+Создайте файл `.env` на основе `.env.example`:
 
-\`\`\`env
+```env
 NODE_ENV=development
 PORT=3001
 API_URL=http://localhost:3001
@@ -38,18 +38,18 @@ DISCORD_CLIENT_ID=...
 DISCORD_CLIENT_SECRET=...
 GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
-\`\`\`
+```
 
 ## 🏃 Запуск
 
-\`\`\`bash
+```bash
 # Development
 npm run dev
 
 # Production
 npm run build
 npm start
-\`\`\`
+```
 
 ## 📚 API Endpoints
 
@@ -73,4 +73,4 @@ npm start
 
 ## 🔗 Frontend Repository
 
-Frontend: \`/Users/netia/WebstormProjects/linkoo\`
+Frontend: https://github.com/addavriance/linkoo
