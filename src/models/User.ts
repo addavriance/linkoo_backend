@@ -11,6 +11,8 @@ export interface ISubscription {
     plan: string;
     expiresAt: Date;
     stripeCustomerId?: string;
+    autoRenew?: boolean;
+    paymentMethodId?: string;
 }
 
 export interface IUserSettings {
