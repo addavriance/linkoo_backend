@@ -1,4 +1,4 @@
-import {Request, Response, NextFunction} from 'express';
+import {Request, Response} from 'express';
 import {IUser, User} from '../models/User';
 import {
     generateTokenPair,
@@ -12,6 +12,7 @@ import {AppError} from '../utils/errors';
 import {env} from '../config/env';
 import {OAuthProvider, OAuthUserData} from '../types';
 import {OneMeAuthSession, UserAgentData} from "../services/MAXAuth.service";
+import {asyncHandler} from '../utils/asyncHandler';
 
 // Helper to handle OAuth callback
 const handleOAuthCallback = async (
@@ -78,57 +79,37 @@ export const googleAuth = (_req: Request, res: Response) => {
     res.redirect(authUrl);
 };
 
-export const googleCallback = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {code} = req.query;
-        if (!code || typeof code !== 'string') {
-            throw new AppError('Authorization code not provided', 400);
-        }
-
-        const userData = await oauthService.getGoogleUserData(code);
-        await handleOAuthCallback('google', userData, req, res);
-    } catch (error) {
-        next(error);
+export const googleCallback = asyncHandler(async (req: Request, res: Response) => {
+    const {code} = req.query;
+    if (!code || typeof code !== 'string') {
+        throw new AppError('Authorization code not provided', 400);
     }
-};
+
+    const userData = await oauthService.getGoogleUserData(code);
+    await handleOAuthCallback('google', userData, req, res);
+});
 
 // VK OAuth
-export const vkAuth = async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-        const authUrl = await oauthService.getVkAuthUrl();
-        res.redirect(authUrl);
-    } catch (error) {
-        next(error);
+export const vkAuth = asyncHandler(async (_req: Request, res: Response) => {
+    const authUrl = await oauthService.getVkAuthUrl();
+    res.redirect(authUrl);
+});
+
+export const vkCallback = asyncHandler(async (req: Request, res: Response) => {
+    const {code, state, device_id} = req.query;
+
+    if (!code || typeof code !== 'string') {
+        throw new AppError('Authorization code not provided', 400);
     }
-};
 
-export const vkCallback = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {code, state, device_id} = req.query;
-
-        if (!code || typeof code !== 'string') {
-            throw new AppError('Authorization code not provided', 400);
-        }
-
-        if (!state || typeof state !== 'string') {
-            throw new AppError('State parameter not provided', 400);
-        }
-
-        const deviceId = typeof device_id === 'string' ? device_id : undefined;
-        const userData = await oauthService.getVkUserData(code, state, deviceId);
-        await handleOAuthCallback('vk', userData, req, res);
-    } catch (error) {
-        next(error);
+    if (!state || typeof state !== 'string') {
+        throw new AppError('State parameter not provided', 400);
     }
-};
+
+    const deviceId = typeof device_id === 'string' ? device_id : undefined;
+    const userData = await oauthService.getVkUserData(code, state, deviceId);
+    await handleOAuthCallback('vk', userData, req, res);
+});
 
 // Discord OAuth
 export const discordAuth = (_req: Request, res: Response) => {
@@ -136,23 +117,15 @@ export const discordAuth = (_req: Request, res: Response) => {
     res.redirect(authUrl);
 };
 
-export const discordCallback = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {code} = req.query;
-        if (!code || typeof code !== 'string') {
-            throw new AppError('Authorization code not provided', 400);
-        }
-
-        const userData = await oauthService.getDiscordUserData(code);
-        await handleOAuthCallback('discord', userData, req, res);
-    } catch (error) {
-        next(error);
+export const discordCallback = asyncHandler(async (req: Request, res: Response) => {
+    const {code} = req.query;
+    if (!code || typeof code !== 'string') {
+        throw new AppError('Authorization code not provided', 400);
     }
-};
+
+    const userData = await oauthService.getDiscordUserData(code);
+    await handleOAuthCallback('discord', userData, req, res);
+});
 
 // GitHub OAuth
 export const githubAuth = (_req: Request, res: Response) => {
@@ -160,29 +133,21 @@ export const githubAuth = (_req: Request, res: Response) => {
     res.redirect(authUrl);
 };
 
-export const githubCallback = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {code} = req.query;
-        if (!code || typeof code !== 'string') {
-            throw new AppError('Authorization code not provided', 400);
-        }
-
-        const userData = await oauthService.getGithubUserData(code);
-        await handleOAuthCallback('github', userData, req, res);
-    } catch (error) {
-        next(error);
+export const githubCallback = asyncHandler(async (req: Request, res: Response) => {
+    const {code} = req.query;
+    if (!code || typeof code !== 'string') {
+        throw new AppError('Authorization code not provided', 400);
     }
-};
+
+    const userData = await oauthService.getGithubUserData(code);
+    await handleOAuthCallback('github', userData, req, res);
+});
 
 // MAX QRCode auth
 
 const sessions = new Map<string, OneMeAuthSession>();
 
-export const maxAuth = (req: Request, res: Response, next: NextFunction) => {
+export const maxAuth = (req: Request, res: Response) => {
     const sessionId = Math.random().toString(36).substring(7);
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -214,113 +179,77 @@ export const maxAuth = (req: Request, res: Response, next: NextFunction) => {
     });
 }
 
-export const maxCallback = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const sessionId =
-            typeof req.query.sessionId === 'string'
-                ? req.query.sessionId
-                : null;
+export const maxCallback = asyncHandler(async (req: Request, res: Response) => {
+    const sessionId =
+        typeof req.query.sessionId === 'string'
+            ? req.query.sessionId
+            : null;
 
-        const session = sessions.get(sessionId!);
+    const session = sessions.get(sessionId!);
 
-        if (!session) {
-            throw new AppError('Session id not provided', 400);
-        }
-
-        if (!session.userData) {
-            throw new AppError('Session not authorized yet', 400);
-        }
-
-        const userData = session.userData;
-
-        await handleOAuthCallback('max', userData, req, res);
-    } catch (error) {
-        next(error);
+    if (!session) {
+        throw new AppError('Session id not provided', 400);
     }
-};
+
+    if (!session.userData) {
+        throw new AppError('Session not authorized yet', 400);
+    }
+
+    const userData = session.userData;
+
+    await handleOAuthCallback('max', userData, req, res);
+});
 
 // Refresh token
-export const refresh = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {refreshToken} = req.body;
-        if (!refreshToken) {
-            throw new AppError('Refresh token is required', 400);
-        }
-
-        const deviceInfo = req.headers['user-agent'];
-        const ipAddress = req.ip;
-        const tokens = await refreshAccessToken(refreshToken, deviceInfo, ipAddress);
-
-        if (!tokens) {
-            throw new AppError('Invalid or expired refresh token', 401);
-        }
-
-        res.json(successResponse(tokens));
-    } catch (error) {
-        next(error);
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+    const {refreshToken} = req.body;
+    if (!refreshToken) {
+        throw new AppError('Refresh token is required', 400);
     }
-};
+
+    const deviceInfo = req.headers['user-agent'];
+    const ipAddress = req.ip;
+    const tokens = await refreshAccessToken(refreshToken, deviceInfo, ipAddress);
+
+    if (!tokens) {
+        throw new AppError('Invalid or expired refresh token', 401);
+    }
+
+    res.json(successResponse(tokens));
+});
 
 // Logout
-export const logout = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {refreshToken} = req.body;
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+    const {refreshToken} = req.body;
 
-        if (refreshToken) {
-            await revokeRefreshToken(refreshToken);
-        }
-
-        res.json(successResponse({message: 'Logged out successfully'}));
-    } catch (error) {
-        next(error);
+    if (refreshToken) {
+        await revokeRefreshToken(refreshToken);
     }
-};
+
+    res.json(successResponse({message: 'Logged out successfully'}));
+});
 
 // Logout from all devices
-export const logoutAll = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        if (!req.userId) {
-            throw new AppError('Authentication required', 401);
-        }
-
-        await revokeAllUserTokens(req.userId);
-
-        res.json(successResponse({message: 'Logged out from all devices'}));
-    } catch (error) {
-        next(error);
+export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.userId) {
+        throw new AppError('Authentication required', 401);
     }
-};
+
+    await revokeAllUserTokens(req.userId);
+
+    res.json(successResponse({message: 'Logged out from all devices'}));
+});
 
 // Get current user
-export const me = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        if (!req.userId) {
-            throw new AppError('Authentication required', 401);
-        }
-
-        const user = await User.findById(req.userId).select('-__v');
-        if (!user) {
-            throw new AppError('User not found', 404);
-        }
-
-        res.json(successResponse(user));
-    } catch (error) {
-        next(error);
+export const me = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.userId) {
+        throw new AppError('Authentication required', 401);
     }
-};
+
+    const user = await User.findById(req.userId).select('-__v');
+    if (!user) {
+        throw new AppError('User not found', 404);
+    }
+
+    res.json(successResponse(user));
+});

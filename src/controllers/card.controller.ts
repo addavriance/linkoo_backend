@@ -1,126 +1,51 @@
-import {Request, Response, NextFunction} from 'express';
+import {Request, Response} from 'express';
 import * as cardService from '../services/card.service';
 import {successResponse, paginatedResponse} from '../utils/response';
 import {AppError} from '../utils/errors';
+import {asyncHandler} from '../utils/asyncHandler';
 
-export const createCard = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        if (!req.userId) {
-            throw new AppError('Authentication required', 401);
-        }
+export const createCard = asyncHandler(async (req: Request, res: Response) => {
+    const card = await cardService.createCard(req.userId!, req.body);
+    res.status(201).json(successResponse(card));
+});
 
-        const card = await cardService.createCard(req.userId, req.body);
-        res.status(201).json(successResponse(card));
-    } catch (error) {
-        next(error);
-    }
-};
+export const getCard = asyncHandler(async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const card = await cardService.getCardById(id, req.userId);
+    res.json(successResponse(card));
+});
 
-export const getCard = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {id} = req.params;
-        const card = await cardService.getCardById(id, req.userId);
-        res.json(successResponse(card));
-    } catch (error) {
-        next(error);
-    }
-};
+export const getMyCards = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
-export const getMyCards = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        if (!req.userId) {
-            throw new AppError('Authentication required', 401);
-        }
+    const {cards, total} = await cardService.getUserCards(req.userId!, page, limit);
 
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
+    res.json(paginatedResponse(cards, page, limit, total));
+});
 
-        const {cards, total} = await cardService.getUserCards(
-            req.userId,
-            page,
-            limit
-        );
+export const updateCard = asyncHandler(async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const card = await cardService.updateCard(id, req.userId!, req.body);
+    res.json(successResponse(card));
+});
 
-        res.json(paginatedResponse(cards, page, limit, total));
-    } catch (error) {
-        next(error);
-    }
-};
+export const deleteCard = asyncHandler(async (req: Request, res: Response) => {
+    const {id} = req.params;
+    await cardService.deleteCard(id, req.userId!);
+    res.json(successResponse({message: 'Card deleted successfully'}));
+});
 
-export const updateCard = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        if (!req.userId) {
-            throw new AppError('Authentication required', 401);
-        }
+export const trackView = asyncHandler(async (req: Request, res: Response) => {
+    const {id} = req.params;
+    await cardService.incrementViewCount(id);
+    res.json(successResponse({message: 'View tracked'}));
+});
 
-        const {id} = req.params;
-        const card = await cardService.updateCard(id, req.userId, req.body);
-        res.json(successResponse(card));
-    } catch (error) {
-        next(error);
-    }
-};
+export const getPublicCards = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
 
-export const deleteCard = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        if (!req.userId) {
-            throw new AppError('Authentication required', 401);
-        }
-
-        const {id} = req.params;
-        await cardService.deleteCard(id, req.userId);
-        res.json(successResponse({message: 'Card deleted successfully'}));
-    } catch (error) {
-        next(error);
-    }
-};
-
-export const trackView = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const {id} = req.params;
-        await cardService.incrementViewCount(id);
-        res.json(successResponse({message: 'View tracked'}));
-    } catch (error) {
-        next(error);
-    }
-};
-
-export const getPublicCards = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
-
-        const {cards, total} = await cardService.getPublicCards(page, limit);
-        res.json(paginatedResponse(cards, page, limit, total));
-    } catch (error) {
-        next(error);
-    }
-};
+    const {cards, total} = await cardService.getPublicCards(page, limit);
+    res.json(paginatedResponse(cards, page, limit, total));
+});
