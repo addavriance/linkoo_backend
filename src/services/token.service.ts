@@ -4,6 +4,8 @@ import {RefreshToken} from '../models/RefreshToken';
 import {IUser} from '../models/User';
 import {env} from '../config/env';
 import {TokenPayload, TokenPair} from '../types';
+import {DAY, HOUR} from "../constants";
+import {pollImmediate} from "../utils/polling";
 
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
@@ -77,4 +79,33 @@ export const revokeRefreshToken = async (token: string): Promise<void> => {
 
 export const revokeAllUserTokens = async (userId: string): Promise<void> => {
     await RefreshToken.updateMany({userId, isRevoked: false}, {isRevoked: true});
+};
+
+
+export const cleanupExpiredTokens = async (): Promise<void> => {
+    try {
+        const now = new Date();
+
+        const sevenDaysAgo = new Date(now.getTime() - 7 * DAY);
+
+        const result = await RefreshToken.deleteMany({
+            $or: [
+                {expiresAt: {$lt: sevenDaysAgo}},
+                {
+                    isRevoked: true,
+                    createdAt: {$lt: sevenDaysAgo}
+                }
+            ]
+        });
+
+        if (result.deletedCount > 0) {
+            console.log(`[Cleanup] Removed ${result.deletedCount} expired/revoked tokens`);
+        }
+    } catch (error) {
+        console.error('[Cleanup] Failed to cleanup expired tokens:', error);
+    }
+};
+
+export const startTokenCleanup = (intervalMs: number = 24 * HOUR): void => {
+    pollImmediate(cleanupExpiredTokens, intervalMs);
 };

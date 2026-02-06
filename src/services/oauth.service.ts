@@ -111,7 +111,7 @@ export const getVkAuthUrl = async (): Promise<string> => {
         state,
         code_challenge: pkce.codeChallenge,
         code_challenge_method: pkce.codeChallengeMethod,
-        scope: 'vkid.personal_info',
+        scope: 'vkid.personal_info email', // ??? - TODO: отладить, почему email не запрашивается
     });
 
     return `https://id.vk.com/authorize?${params}`;
@@ -219,7 +219,7 @@ export const getVkUserData = async (
     }
 
     return {
-        email: user.email || `${user.user_id}@vk.com`,
+        email: user.email || `${username}@vk.com`,
         name:
             user.first_name && user.last_name
                 ? `${user.first_name} ${user.last_name}`

@@ -14,7 +14,7 @@ export const createLink = async (
     userId?: string
 ): Promise<IShortenedLink> => {
     let slug = data.customSlug;
-    if (slug) {
+    if (slug && userId) {
         if (isReservedSlug(slug)) {
             throw new AppError('This slug is reserved', 400);
         }
@@ -38,10 +38,18 @@ export const createLink = async (
         }
     }
 
+    if (data.targetType === 'url' && data.rawData) {
+        const link = await ShortenedLink.findOne({rawData: data.rawData, isActive: true});
+
+        if (link) {
+            return link;
+        }
+    }
+
     const link = await ShortenedLink.create({
         userId,
         targetType: data.targetType,
-        originalUrl: data.originalUrl,
+        rawData: data.rawData,
         cardId: data.cardId,
         slug,
         subdomain: data.subdomain,
@@ -202,8 +210,8 @@ export const getRedirectTarget = async (
 ): Promise<{ url: string; isCard: boolean; cardId?: string }> => {
     const link = await getLinkBySlug(slug, subdomain);
 
-    if (link.targetType === 'url' && link.originalUrl) {
-        return { url: link.originalUrl, isCard: false };
+    if (link.targetType === 'url' && link.rawData) {
+        return { url: link.rawData, isCard: false };
     }
 
     if (link.targetType === 'card' && link.cardId) {
