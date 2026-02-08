@@ -4,7 +4,7 @@ export const createLinkSchema = z.object({
     body: z
         .object({
             targetType: z.enum(['url', 'card']),
-            originalUrl: z.string().url('Invalid URL format').optional(),
+            rawData: z.string().optional(),
             cardId: z
                 .string()
                 .regex(/^[0-9a-fA-F]{24}$/, 'Invalid card ID')
@@ -30,12 +30,12 @@ export const createLinkSchema = z.object({
         })
         .refine(
             (data) => {
-                if (data.targetType === 'url') return !!data.originalUrl;
+                if (data.targetType === 'url') return !!data.rawData;
                 if (data.targetType === 'card') return !!data.cardId;
                 return false;
             },
             {
-                message: 'Either originalUrl or cardId is required based on targetType',
+                message: 'Either rawData or cardId is required based on targetType',
             }
         ),
 });

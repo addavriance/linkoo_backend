@@ -15,17 +15,18 @@ const router = Router();
 
 router.get('/:slug', validate(getLinkSchema), linkController.getLink);
 
-router.use(authenticate);
-
-router.get('/', linkController.getMyLinks);
-
 router.post(
     '/',
+    optionalAuth,
     linkCreationLimiter,
     checkSubdomainAccess,
     validate(createLinkSchema),
     linkController.createLink
 );
+
+router.use(authenticate);
+
+router.get('/', linkController.getMyLinks);
 
 router.patch('/:slug', validate(updateLinkSchema), linkController.updateLink);
 
