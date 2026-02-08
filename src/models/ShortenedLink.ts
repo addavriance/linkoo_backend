@@ -15,7 +15,7 @@ export interface IShortenedLink extends Document {
     userId?: mongoose.Types.ObjectId;
 
     targetType: LinkTargetType;
-    originalUrl?: string;
+    rawData?: string; // base64 (будет содержать magic bytes для валидации?)
     cardId?: mongoose.Types.ObjectId;
 
     slug: string;
@@ -58,7 +58,7 @@ const ShortenedLinkSchema: Schema<IShortenedLink, IShortenedLinkModel> = new Sch
             required: true,
             enum: ['url', 'card'],
         },
-        originalUrl: {
+        rawData: {
             type: String,
             trim: true,
         },
@@ -108,8 +108,8 @@ ShortenedLinkSchema.index({slug: 1, isActive: 1});
 ShortenedLinkSchema.index({userId: 1, createdAt: -1});
 
 ShortenedLinkSchema.pre('validate', function (next) {
-    if (this.targetType === 'url' && !this.originalUrl) {
-        next(new Error('originalUrl is required when targetType is url'));
+    if (this.targetType === 'url' && !this.rawData) {
+        next(new Error('rawData is required when targetType is url'));
     } else if (this.targetType === 'card' && !this.cardId) {
         next(new Error('cardId is required when targetType is card'));
     } else {

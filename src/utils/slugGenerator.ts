@@ -47,6 +47,9 @@ const reservedSlugs = new Set([
     'css',
     'js',
     'fonts',
+    'subscription',
+    'subscriptions',
+    'subscribe',
 ]);
 
 export const isReservedSlug = (slug: string): boolean => {

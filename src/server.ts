@@ -1,14 +1,19 @@
 import app from './app';
 import {env} from './config/env';
+import {HOUR} from "./constants";
 import {connectDatabase} from './config/database';
-import {startTokenCleanup} from './utils/cleanup';
+import {startTokenCleanup} from "./services/token.service";
+import {startSubscriptionPolling} from "./services/subscription.service";
+
 
 const startServer = async () => {
     try {
         await connectDatabase();
 
-        startTokenCleanup(24);
+        startTokenCleanup(24 * HOUR);
         console.log('Token cleanup service started');
+        startSubscriptionPolling(24 * HOUR);
+        console.log('Subscription service started');
 
         const port = parseInt(env.PORT);
         app.listen(port, () => {
