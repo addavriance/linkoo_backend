@@ -22,7 +22,15 @@ app.use(cors(corsOptions));
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({extended: true}));
 
-app.use(compression());
+app.use(compression({
+    filter: (req, res) => {
+        if (req.path === '/api/auth/max') {
+            return false;
+        }
+        // Для всех остальных используем стандартный фильтр
+        return compression.filter(req, res);
+    }
+}));
 
 if (env.NODE_ENV !== 'test') {
     app.use(morgan('combined'));

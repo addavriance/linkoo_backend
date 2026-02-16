@@ -85,7 +85,14 @@ export class OneMeAuthSession {
 
         console.log(`[MAX Auth] 📡 Отправка SSE клиенту - событие: "${event}":`, data);
         this.sseResponse.write(payload);
-        this.sseResponse.flush?.();
+
+        // Принудительный flush через нативный socket
+        if ((this.sseResponse as any).flush) {
+            (this.sseResponse as any).flush();
+        } else if ((this.sseResponse as any).socket) {
+            // Fallback для Express без compression middleware
+            (this.sseResponse as any).socket.write('');
+        }
     }
 
     private sendMessage(payload: Partial<OneMeMessage>) {
