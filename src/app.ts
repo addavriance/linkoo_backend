@@ -40,10 +40,12 @@ app.get('/health', (_req, res) => {
 
 app.use('/api', apiLimiter);
 
+// WebSocket роут ПЕРЕД обычными роутами
 app.ws('/api/auth/max', (ws: any, _req: any) => {
-    console.log('[App] WebSocket connection для MAX auth');
+    console.log('[App] ✅ WebSocket connection established для MAX auth');
     handleMaxAuthConnection(ws);
 });
+console.log('[App] 🔌 WebSocket route registered: /api/auth/max');
 
 app.use('/api', routes);
 
