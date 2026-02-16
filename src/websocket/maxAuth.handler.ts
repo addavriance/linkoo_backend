@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { OneMeAuthSession, UserAgentData } from '../services/MAXAuth.service';
-import {SECOND} from "@/constants";
-import {pollImmediate} from "@/utils/polling";
+import {SECOND} from "../constants";
+import {pollImmediate} from "../utils/polling";
 
 interface SessionData {
     session: OneMeAuthSession;
