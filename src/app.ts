@@ -12,10 +12,11 @@ import {apiLimiter} from './middleware/rateLimiter';
 import {errorHandler, notFoundHandler} from './middleware/errorHandler';
 import routes from './routes';
 import redirectRoutes from './routes/redirect.routes';
+import { handleMaxAuthConnection } from './websocket/maxAuth.handler';
 
 const app: Application = express();
 
-expressWs(app);
+const wsInstance = expressWs(app);
 
 app.set('trust proxy', 1);
 
@@ -40,6 +41,11 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api', apiLimiter);
+
+(app as any).ws('/api/auth/max', (ws: any, req: any) => {
+    console.log('[App] WebSocket connection для MAX auth');
+    handleMaxAuthConnection(ws);
+});
 
 app.use('/api', routes);
 
