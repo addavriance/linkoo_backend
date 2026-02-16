@@ -6,7 +6,16 @@ export const maxAuthSessions = new Map<string, OneMeAuthSession>();
 export const handleMaxAuthConnection = (ws: WebSocket) => {
     console.log('[MAX Auth Handler] 🔌 Новое WebSocket соединение');
 
+    const initTimeout = setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+            console.warn('[MAX Auth Handler] ⏱️ Таймаут ожидания начального сообщения');
+            ws.close(1002, 'No initial message received');
+        }
+    }, 10000);
+
     ws.once('message', (data) => {
+        clearTimeout(initTimeout);
+
         try {
             const payload = JSON.parse(data.toString());
             console.log('[MAX Auth Handler] 📥 Получен начальный payload:', payload);
@@ -37,18 +46,8 @@ export const handleMaxAuthConnection = (ws: WebSocket) => {
             });
         } catch (error) {
             console.error('[MAX Auth Handler] ❌ Ошибка парсинга начального сообщения:', error);
+            clearTimeout(initTimeout);
             ws.close(1003, 'Invalid initial message');
         }
-    });
-
-    const initTimeout = setTimeout(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-            console.warn('[MAX Auth Handler] ⏱️ Таймаут ожидания начального сообщения');
-            ws.close(1002, 'No initial message received');
-        }
-    }, 10000);
-
-    ws.on('close', () => {
-        clearTimeout(initTimeout);
     });
 };
