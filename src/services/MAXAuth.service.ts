@@ -61,19 +61,19 @@ export class OneMeAuthSession {
     ) {
         this.clientWs = clientWs;
         this.deviceId = this.generateDeviceId();
-        console.log('[MAX Auth] 🚀 Создана новая сессия авторизации');
+        console.log('[MAX Auth] Создана новая сессия авторизации');
         console.log('[MAX Auth] SessionID:', sessionId);
         console.log('[MAX Auth] DeviceID:', this.deviceId);
 
         // Слушаем закрытие соединения с клиентом
         this.clientWs.on('close', () => {
-            console.log('[MAX Auth] 📡 WebSocket соединение с клиентом закрыто');
+            console.log('[MAX Auth] WebSocket соединение с клиентом закрыто');
             this.cleanup();
         });
 
         // Клиент не должен ничего отправлять, но на всякий случай
         this.clientWs.on('message', () => {
-            console.log('[MAX Auth] ⚠️ Получено сообщение от клиента (игнорируется)');
+            console.log('[MAX Auth] Получено сообщение от клиента (игнорируется)');
         });
     }
 
@@ -90,7 +90,7 @@ export class OneMeAuthSession {
             console.log(`[MAX Auth] 📡 Отправка клиенту - событие: "${event}":`, data);
             this.clientWs.send(JSON.stringify({ event, data }));
         } else {
-            console.warn('[MAX Auth] ⚠️ Не могу отправить клиенту - соединение закрыто');
+            console.warn('[MAX Auth] Не могу отправить клиенту - соединение закрыто');
         }
     }
 
@@ -109,31 +109,25 @@ export class OneMeAuthSession {
     private startPolling() {
         if (this.pollingInterval) clearInterval(this.pollingInterval);
 
-        console.log('[MAX Auth] ⏱️ Запущен polling статуса QR (каждые 5 сек)');
         this.pollingInterval = setInterval(() => {
             if (this.ws?.readyState === WebSocket.OPEN && this.trackId) {
-                console.log('[MAX Auth] 🔄 Polling статуса QR, trackId:', this.trackId);
                 this.sendMessage({
                     opcode: 289,
                     payload: { trackId: this.trackId }
                 });
             } else {
-                console.log('[MAX Auth] ⚠️ Пропущен polling: readyState =', this.ws?.readyState, ', trackId =', this.trackId);
+                console.log('[MAX Auth] ропущен polling: readyState =', this.ws?.readyState, ', trackId =', this.trackId);
             }
         }, 5000);
     }
 
     private handleMessage(data: OneMeMessage) {
-        console.log(`[MAX Auth] 📥 Получено сообщение от MAX (opcode: ${data.opcode}, cmd: ${data.cmd}):`, JSON.stringify(data, null, 2));
-
         if (data.opcode === 6 && data.cmd === 1) {
-            console.log('[MAX Auth] ✅ Handshake успешен, запрашиваем QR-код');
             this.sendToClient('status', { message: 'Получаем QR-код...' });
             this.sendMessage({ opcode: 288 });
         }
 
         if (data.opcode === 288 && data.payload) {
-            console.log('[MAX Auth] ✅ QR-код получен:', data.payload.qrLink);
             this.trackId = data.payload.trackId;
 
             this.sendToClient('qr', {
@@ -176,7 +170,6 @@ export class OneMeAuthSession {
         }
 
         if (data.opcode === 289 && data.payload?.status?.loginAvailable) {
-            console.log('[MAX Auth] ✅ QR отсканирован, запрашиваем токен');
             this.sendToClient('status', { message: 'QR отсканирован! Получаем токен...' });
 
             if (this.pollingInterval) clearInterval(this.pollingInterval);
@@ -188,7 +181,6 @@ export class OneMeAuthSession {
         }
 
         if (data.opcode === 291 && data.payload?.tokenAttrs) {
-            console.log('[MAX Auth] ✅ Токен получен, авторизация успешна');
             this.sendToClient('success', {
                 token: data.payload.tokenAttrs.LOGIN.token,
                 profile: data.payload.profile,
@@ -207,7 +199,6 @@ export class OneMeAuthSession {
         }
 
         if (data.cmd === 3 /* error */) {
-            console.log('[MAX Auth] ⚠️ Ошибка от сервера (QR устарел), перезапускаем соединение');
             this.sendToClient('status', { message: 'QR-код устарел, получаем новый...' });
 
             this.resetSocket();
@@ -215,10 +206,6 @@ export class OneMeAuthSession {
     }
 
     public start() {
-        console.log('[MAX Auth] 🔌 Подключение к WebSocket wss://ws-api.oneme.ru/websocket');
-        console.log('[MAX Auth] DeviceID:', this.deviceId);
-        console.log('[MAX Auth] SessionID:', this.sessionId);
-
         this.ws = new WebSocket('wss://ws-api.oneme.ru/websocket', {
             headers: {
                 'Origin': 'https://web.max.ru',
@@ -231,7 +218,6 @@ export class OneMeAuthSession {
         });
 
         this.ws.on('open', () => {
-            console.log('[MAX Auth] ✅ WebSocket соединение открыто, отправляем handshake');
             this.sendMessage({
                 opcode: 6,
                 payload: {
@@ -246,61 +232,51 @@ export class OneMeAuthSession {
                 const data = JSON.parse(rawData.toString());
                 this.handleMessage(data);
             } catch (e) {
-                console.error('[MAX Auth] ❌ Ошибка парсинга сообщения от MAX:', e);
+                console.error('[MAX Auth] Ошибка парсинга сообщения от MAX:', e);
                 console.error('[MAX Auth] Сырые данные:', rawData);
             }
         });
 
         this.ws.on('error', (error: Error) => {
-            console.error('[MAX Auth] ❌ WebSocket ошибка:', error.message);
+            console.error('[MAX Auth] WebSocket ошибка:', error.message);
             console.error('[MAX Auth] Полная ошибка:', error);
             this.sendToClient('error', { message: error.message });
             this.cleanup();
         });
 
         this.ws.on('close', (code, reason) => {
-            console.log('[MAX Auth] 🔌 WebSocket соединение закрыто');
-            console.log('[MAX Auth] Код закрытия:', code);
-            console.log('[MAX Auth] Причина:', reason.toString());
             this.cleanup();
         });
     }
 
     private cleanup() {
-        console.log('[MAX Auth] 🧹 Очистка ресурсов');
+        console.log('[MAX Auth] Очистка ресурсов');
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
-            console.log('[MAX Auth] ⏹️ Polling остановлен');
         }
         if (this.ws) {
-            console.log('[MAX Auth] 🔌 Закрытие WebSocket');
             this.ws.close();
         }
         if (this.clientWs.readyState === WebSocket.OPEN) {
-            console.log('[MAX Auth] 🔌 Закрытие клиентского WebSocket');
+            console.log('[MAX Auth] Закрытие клиентского WebSocket');
             this.clientWs.close();
         }
     }
 
     private resetSocket() {
-        console.log('[MAX Auth] 🔄 Перезапуск WebSocket соединения');
-
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
             this.pollingInterval = null;
-            console.log('[MAX Auth] ⏹️ Polling остановлен');
         }
 
         if (this.ws) {
             this.ws.removeAllListeners();
             this.ws.close();
             this.ws = null;
-            console.log('[MAX Auth] 🔌 WebSocket закрыт');
         }
 
         this.seq = 0;
         this.trackId = null;
-        console.log('[MAX Auth] 🔄 Счетчики сброшены, запускаем новое соединение');
 
         this.start();
     }
