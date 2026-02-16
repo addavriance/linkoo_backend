@@ -1,4 +1,5 @@
 import express, {Application} from 'express';
+import expressWs from 'express-ws';
 import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -14,6 +15,8 @@ import redirectRoutes from './routes/redirect.routes';
 
 const app: Application = express();
 
+expressWs(app);
+
 app.set('trust proxy', 1);
 
 app.use(helmet());
@@ -22,15 +25,7 @@ app.use(cors(corsOptions));
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({extended: true}));
 
-app.use(compression({
-    filter: (req, res) => {
-        if (req.path === '/api/auth/max') {
-            return false;
-        }
-        // Для всех остальных используем стандартный фильтр
-        return compression.filter(req, res);
-    }
-}));
+app.use(compression());
 
 if (env.NODE_ENV !== 'test') {
     app.use(morgan('combined'));

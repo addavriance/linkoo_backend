@@ -1,11 +1,13 @@
-import {Router} from 'express';
+import {Router, Request} from 'express';
+import { WebSocket } from 'ws';
 import * as authController from '../controllers/auth.controller';
 import {authenticate} from '../middleware/auth.middleware';
 import {authLimiter, authCheckLimiter} from '../middleware/rateLimiter';
 import {validate} from '../middleware/validator';
 import {refreshTokenSchema} from '../validators/auth.validator';
+import { handleMaxAuthConnection } from '../websocket/maxAuth.handler';
 
-const router = Router();
+const router = Router() as any; // cast to any для поддержки .ws()
 
 router.get('/google', authLimiter, authController.googleAuth);
 router.get('/google/callback', authController.googleCallback);
@@ -19,7 +21,11 @@ router.get('/discord/callback', authController.discordCallback);
 router.get('/github', authLimiter, authController.githubAuth);
 router.get('/github/callback', authController.githubCallback);
 
-// MAX Auth использует WebSocket на /api/auth/max (см. server.ts)
+// MAX WebSocket auth
+router.ws('/max', (ws: WebSocket, req: Request) => {
+    console.log('[Auth Routes] WebSocket connection для MAX auth');
+    handleMaxAuthConnection(ws);
+});
 router.get('/max/callback', authController.maxCallback);
 
 router.post(
