@@ -1,5 +1,5 @@
 import mongoose, {Schema, Document, Model} from 'mongoose';
-import {SocialPlatform} from '../types';
+import {SocialPlatform} from '@/types';
 
 export interface ISocial {
     platform: SocialPlatform;

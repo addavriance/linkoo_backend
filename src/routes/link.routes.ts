@@ -1,9 +1,9 @@
 import {Router} from 'express';
 import * as linkController from '../controllers/link.controller';
-import {authenticate, optionalAuth} from '../middleware/auth.middleware';
-import {checkSubdomainAccess} from '../middleware/accountType';
-import {linkCreationLimiter} from '../middleware/rateLimiter';
-import {validate} from '../middleware/validator';
+import {authenticate, optionalAuth} from '@/middleware/auth.middleware';
+import {checkSubdomainAccess} from '@/middleware/accountType';
+import {linkCreationLimiter} from '@/middleware/rateLimiter';
+import {validate} from '@/middleware/validator';
 import {
     createLinkSchema,
     updateLinkSchema,

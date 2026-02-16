@@ -1,10 +1,10 @@
 import axios from 'axios';
 import {randomUUID} from 'crypto';
-import {Payment} from '../models/Payment';
-import {User} from '../models/User';
-import {env} from '../config/env';
-import {AppError} from '../utils/errors';
-import {DAY} from "../constants";
+import {Payment} from '@/models/Payment';
+import {User} from '@/models/User';
+import {env} from '@/config/env';
+import {AppError} from '@/utils/errors';
+import {DAY} from "@/constants";
 
 const YUKASSA_API_URL = 'https://api.yookassa.ru/v3';
 

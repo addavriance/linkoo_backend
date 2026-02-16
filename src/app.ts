@@ -1,4 +1,4 @@
-import express, {Application} from 'express';
+import express from 'express';
 import expressWs from 'express-ws';
 import path from 'path';
 import cors from 'cors';
@@ -12,7 +12,7 @@ import {apiLimiter} from './middleware/rateLimiter';
 import {errorHandler, notFoundHandler} from './middleware/errorHandler';
 import routes from './routes';
 import redirectRoutes from './routes/redirect.routes';
-import { handleMaxAuthConnection } from './websocket/maxAuth.handler';
+import {handleMaxAuthConnection} from './websocket/maxAuth.handler';
 
 const { app } = expressWs(express());
 

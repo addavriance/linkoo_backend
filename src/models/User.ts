@@ -1,5 +1,5 @@
 import mongoose, {Schema, Document, model, Model} from 'mongoose';
-import {OAuthProvider, AccountType} from '../types';
+import {OAuthProvider, AccountType} from '@/types';
 
 export interface IUserProfile {
     name: string;

@@ -1,9 +1,9 @@
 import {Router} from 'express';
 import * as authController from '../controllers/auth.controller';
-import {authenticate} from '../middleware/auth.middleware';
-import {authLimiter, authCheckLimiter} from '../middleware/rateLimiter';
-import {validate} from '../middleware/validator';
-import {refreshTokenSchema} from '../validators/auth.validator';
+import {authenticate} from '@/middleware/auth.middleware';
+import {authLimiter, authCheckLimiter} from '@/middleware/rateLimiter';
+import {validate} from '@/middleware/validator';
+import {refreshTokenSchema} from '@/validators/auth.validator';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import mongoose, {Schema, Document, Model} from 'mongoose';
-import {LinkTargetType} from '../types';
+import {LinkTargetType} from '@/types';
 
 export interface IClickAnalytics {
     timestamp: Date;

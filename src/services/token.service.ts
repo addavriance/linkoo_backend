@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import {RefreshToken} from '../models/RefreshToken';
-import {IUser} from '../models/User';
-import {env} from '../config/env';
-import {TokenPayload, TokenPair} from '../types';
-import {DAY, HOUR} from "../constants";
-import {pollImmediate} from "../utils/polling";
+import {RefreshToken} from '@/models/RefreshToken';
+import {IUser} from '@/models/User';
+import {env} from '@/config/env';
+import {TokenPayload, TokenPair} from '@/types';
+import {DAY, HOUR} from "@/constants";
+import {pollImmediate} from "@/utils/polling";
 
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;

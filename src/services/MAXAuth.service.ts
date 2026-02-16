@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import {OAuthUserData} from "../types";
+import {OAuthUserData} from "@/types";
 
 export interface UserAgentData {
     deviceType: string;

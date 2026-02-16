@@ -1,8 +1,8 @@
-import {User} from '../models/User';
-import {Payment} from '../models/Payment';
-import {chargeSubscription} from '../controllers/subscription.controller';
-import { pollImmediate, delay } from '../utils/polling';
-import {DAY, HOUR} from "../constants";
+import {User} from '@/models/User';
+import {Payment} from '@/models/Payment';
+import {chargeSubscription} from '@/controllers/subscription.controller';
+import { pollImmediate, delay } from '@/utils/polling';
+import {DAY, HOUR} from "@/constants";
 
 
 export const renewSubscriptions = async (): Promise<void> => {

@@ -1,6 +1,6 @@
 import {Request, Response, NextFunction} from 'express';
-import {AppError} from '../utils/errors';
-import {Card} from '../models/Card';
+import {AppError} from '@/utils/errors';
+import {Card} from '@/models/Card';
 
 export const requirePaid = (
     req: Request,

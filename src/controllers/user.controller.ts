@@ -1,21 +1,17 @@
 import {Request, Response} from 'express';
 import path from 'path';
 import fs from 'fs';
-import {IUser, User} from '../models/User';
-import {Card} from '../models/Card';
-import {ShortenedLink} from '../models/ShortenedLink';
-import {RefreshToken} from '../models/RefreshToken';
-import {successResponse} from '../utils/response';
-import {AppError} from '../utils/errors';
-import {UpdateUserInput} from '../validators/auth.validator';
-import {env} from '../config/env';
-import {asyncHandler} from '../utils/asyncHandler';
+import {IUser, User} from '@/models/User';
+import {Card} from '@/models/Card';
+import {ShortenedLink} from '@/models/ShortenedLink';
+import {RefreshToken} from '@/models/RefreshToken';
+import {successResponse} from '@/utils/response';
+import {AppError} from '@/utils/errors';
+import {UpdateUserInput} from '@/validators/auth.validator';
+import {env} from '@/config/env';
+import {asyncHandler} from '@/utils/asyncHandler';
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.userId) {
-        throw new AppError('Authentication required', 401);
-    }
-
     const user = await User.findById(req.userId).select('-__v');
     if (!user) {
         throw new AppError('User not found', 404);
@@ -25,10 +21,6 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.userId) {
-        throw new AppError('Authentication required', 401);
-    }
-
     const data: UpdateUserInput = req.body;
     const user = await User.findById(req.userId) as IUser;
 
@@ -61,9 +53,6 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.userId) {
-        throw new AppError('Authentication required', 401);
-    }
     if (!req.file) {
         throw new AppError('No file uploaded', 400);
     }
@@ -91,10 +80,6 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const deleteAccount = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.userId) {
-        throw new AppError('Authentication required', 401);
-    }
-
     // Soft delete all user's cards
     await Card.updateMany(
         {userId: req.userId},
@@ -120,10 +105,6 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getStats = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.userId) {
-        throw new AppError('Authentication required', 401);
-    }
-
     const [cardCount, linkCount, totalViews] = await Promise.all([
         Card.countDocuments({userId: req.userId, isActive: true}),
         ShortenedLink.countDocuments({userId: req.userId, isActive: true}),

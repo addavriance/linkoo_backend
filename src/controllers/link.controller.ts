@@ -1,9 +1,8 @@
 import {Request, Response} from 'express';
 import * as linkService from '../services/link.service';
-import {successResponse, paginatedResponse} from '../utils/response';
-import {AppError} from '../utils/errors';
-import {env} from '../config/env';
-import {asyncHandler} from '../utils/asyncHandler';
+import {successResponse, paginatedResponse} from '@/utils/response';
+import {env} from '@/config/env';
+import {asyncHandler} from '@/utils/asyncHandler';
 
 export const createLink = asyncHandler(async (req: Request, res: Response) => {
     const link = await linkService.createLink(req.body, req.userId);

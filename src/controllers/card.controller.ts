@@ -1,8 +1,7 @@
 import {Request, Response} from 'express';
 import * as cardService from '../services/card.service';
-import {successResponse, paginatedResponse} from '../utils/response';
-import {AppError} from '../utils/errors';
-import {asyncHandler} from '../utils/asyncHandler';
+import {successResponse, paginatedResponse} from '@/utils/response';
+import {asyncHandler} from '@/utils/asyncHandler';
 
 export const createCard = asyncHandler(async (req: Request, res: Response) => {
     const card = await cardService.createCard(req.userId!, req.body);

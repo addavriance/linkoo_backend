@@ -1,8 +1,8 @@
-import {Card, ICard} from '../models/Card';
-import {CreateCardInput, UpdateCardInput} from '../validators/card.validator';
-import {AppError, NotFoundError, ForbiddenError} from '../utils/errors';
-import {ShortenedLink} from '../models/ShortenedLink';
-import {createSlug} from '../utils/slugGenerator';
+import {Card, ICard} from '@/models/Card';
+import {CreateCardInput, UpdateCardInput} from '@/validators/card.validator';
+import {NotFoundError, ForbiddenError} from '@/utils/errors';
+import {ShortenedLink} from '@/models/ShortenedLink';
+import {createSlug} from '@/utils/slugGenerator';
 
 export const createCard = async (
     userId: string,

@@ -1,18 +1,18 @@
 import {Request, Response} from 'express';
-import {IUser, User} from '../models/User';
+import {IUser, User} from '@/models/User';
 import {
     generateTokenPair,
     refreshAccessToken,
     revokeRefreshToken,
     revokeAllUserTokens,
-} from '../services/token.service';
+} from '@/services/token.service';
 import * as oauthService from '../services/oauth.service';
-import {successResponse} from '../utils/response';
-import {AppError} from '../utils/errors';
-import {env} from '../config/env';
-import {OAuthProvider, OAuthUserData} from '../types';
-import {asyncHandler} from '../utils/asyncHandler';
-import { maxAuthSessions } from '../websocket/maxAuth.handler';
+import {successResponse} from '@/utils/response';
+import {AppError} from '@/utils/errors';
+import {env} from '@/config/env';
+import {OAuthProvider, OAuthUserData} from '@/types';
+import {asyncHandler} from '@/utils/asyncHandler';
+import { maxAuthSessions } from '@/websocket/maxAuth.handler';
 
 // Helper to handle OAuth callback
 const handleOAuthCallback = async (

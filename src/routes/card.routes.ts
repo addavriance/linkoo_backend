@@ -1,15 +1,15 @@
 import {Router} from 'express';
 import * as cardController from '../controllers/card.controller';
-import {authenticate, optionalAuth} from '../middleware/auth.middleware';
-import {checkCardLimit} from '../middleware/accountType';
-import {viewLimiter} from '../middleware/rateLimiter';
-import {validate} from '../middleware/validator';
+import {authenticate, optionalAuth} from '@/middleware/auth.middleware';
+import {checkCardLimit} from '@/middleware/accountType';
+import {viewLimiter} from '@/middleware/rateLimiter';
+import {validate} from '@/middleware/validator';
 import {
     createCardSchema,
     updateCardSchema,
     getCardSchema,
     deleteCardSchema,
-} from '../validators/card.validator';
+} from '@/validators/card.validator';
 
 const router = Router();
 

@@ -1,13 +1,13 @@
 import {Request, Response} from 'express';
 import axios from 'axios';
 import {randomUUID} from 'crypto';
-import {Payment} from '../models/Payment';
-import {User} from '../models/User';
-import {env} from '../config/env';
-import {AppError} from '../utils/errors';
-import {successResponse} from '../utils/response';
-import {getPlanInfo, SubscriptionPlan, calculateExpiryDate} from '../constants/payment';
-import {asyncHandler} from '../utils/asyncHandler';
+import {Payment} from '@/models/Payment';
+import {User} from '@/models/User';
+import {env} from '@/config/env';
+import {AppError} from '@/utils/errors';
+import {successResponse} from '@/utils/response';
+import {getPlanInfo, SubscriptionPlan, calculateExpiryDate} from '@/constants/payment';
+import {asyncHandler} from '@/utils/asyncHandler';
 import {Types} from "mongoose";
 
 const YUKASSA_API_URL = 'https://api.yookassa.ru/v3';

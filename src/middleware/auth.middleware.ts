@@ -1,7 +1,7 @@
 import {Request, Response, NextFunction} from 'express';
-import {verifyAccessToken} from '../services/token.service';
-import {AppError} from '../utils/errors';
-import {User, IUser} from '../models/User';
+import {verifyAccessToken} from '@/services/token.service';
+import {AppError} from '@/utils/errors';
+import {User, IUser} from '@/models/User';
 
 export const authenticate = async (
     req: Request,

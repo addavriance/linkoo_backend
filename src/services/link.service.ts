@@ -1,13 +1,13 @@
-import {ShortenedLink, IShortenedLink, IClickAnalytics} from '../models/ShortenedLink';
-import {Card} from '../models/Card';
-import {CreateLinkInput, UpdateLinkInput} from '../validators/link.validator';
+import {ShortenedLink, IShortenedLink, IClickAnalytics} from '@/models/ShortenedLink';
+import {Card} from '@/models/Card';
+import {CreateLinkInput, UpdateLinkInput} from '@/validators/link.validator';
 import {
     AppError,
     NotFoundError,
     ForbiddenError,
     ConflictError,
-} from '../utils/errors';
-import {createSlug, isReservedSlug} from '../utils/slugGenerator';
+} from '@/utils/errors';
+import {createSlug, isReservedSlug} from '@/utils/slugGenerator';
 
 export const createLink = async (
     data: CreateLinkInput,

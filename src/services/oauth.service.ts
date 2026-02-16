@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as crypto from 'crypto';
-import {env} from '../config/env';
-import {OAuthUserData} from '../types';
+import {env} from '@/config/env';
+import {OAuthUserData} from '@/types';
 
 interface VkOAuthStateEntry {
     codeVerifier: string;

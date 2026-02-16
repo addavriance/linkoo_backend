@@ -2,10 +2,10 @@ import {Router} from 'express';
 import * as userController from '../controllers/user.controller';
 import * as cardController from '../controllers/card.controller';
 import * as linkController from '../controllers/link.controller';
-import {authenticate} from '../middleware/auth.middleware';
-import {validate} from '../middleware/validator';
-import {updateUserSchema} from '../validators/auth.validator';
-import {avatarUpload} from '../middleware/upload.middleware';
+import {authenticate} from '@/middleware/auth.middleware';
+import {validate} from '@/middleware/validator';
+import {updateUserSchema} from '@/validators/auth.validator';
+import {avatarUpload} from '@/middleware/upload.middleware';
 
 const router = Router();
 

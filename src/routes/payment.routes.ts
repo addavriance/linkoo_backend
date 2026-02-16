@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import {authenticate} from '../middleware/auth.middleware';
+import {authenticate} from '@/middleware/auth.middleware';
 import {
     createPayment,
     getPaymentStatus,
@@ -8,7 +8,7 @@ import {
     getPaymentMethods,
     deletePaymentMethod,
     linkCard,
-} from '../controllers/payment.controller';
+} from '@/controllers/payment.controller';
 
 const router = Router();
 
