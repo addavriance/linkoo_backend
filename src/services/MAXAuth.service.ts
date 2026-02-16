@@ -84,14 +84,19 @@ export class OneMeAuthSession {
             `data: ${JSON.stringify(data)}\n\n`;
 
         console.log(`[MAX Auth] 📡 Отправка SSE клиенту - событие: "${event}":`, data);
-        this.sseResponse.write(payload);
 
-        // Принудительный flush через нативный socket
-        if ((this.sseResponse as any).flush) {
-            (this.sseResponse as any).flush();
-        } else if ((this.sseResponse as any).socket) {
-            // Fallback для Express без compression middleware
-            (this.sseResponse as any).socket.write('');
+        // Отправляем данные
+        const success = this.sseResponse.write(payload);
+
+        if (!success) {
+            console.warn('[MAX Auth] ⚠️ Response buffer is full, waiting for drain');
+        }
+
+        // Принудительная отправка через нативный socket
+        const socket = (this.sseResponse as any).socket;
+        if (socket && typeof socket.write === 'function') {
+            // Заставляем socket отправить данные немедленно
+            socket.uncork?.();
         }
     }
 

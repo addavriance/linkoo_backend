@@ -154,8 +154,10 @@ export const maxAuth = (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // для nginx
-    res.flushHeaders?.();
-    res.write('\n');
+
+    res.writeHead(200);
+
+    res.write(': SSE connected\n\n');
 
     const userAgent: UserAgentData = req.body?.userAgent || {
         deviceType: 'WEB',
