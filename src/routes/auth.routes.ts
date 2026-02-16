@@ -19,7 +19,7 @@ router.get('/discord/callback', authController.discordCallback);
 router.get('/github', authLimiter, authController.githubAuth);
 router.get('/github/callback', authController.githubCallback);
 
-router.post('/max', authLimiter, authController.maxAuth);
+// MAX Auth использует WebSocket на /api/auth/max (см. server.ts)
 router.get('/max/callback', authController.maxCallback);
 
 router.post(

@@ -11,8 +11,8 @@ import {successResponse} from '../utils/response';
 import {AppError} from '../utils/errors';
 import {env} from '../config/env';
 import {OAuthProvider, OAuthUserData} from '../types';
-import {OneMeAuthSession, UserAgentData} from "../services/MAXAuth.service";
 import {asyncHandler} from '../utils/asyncHandler';
+import { maxAuthSessions } from '../websocket/maxAuth.handler';
 
 // Helper to handle OAuth callback
 const handleOAuthCallback = async (
@@ -143,54 +143,21 @@ export const githubCallback = asyncHandler(async (req: Request, res: Response) =
     await handleOAuthCallback('github', userData, req, res);
 });
 
-// MAX QRCode auth
-
-const sessions = new Map<string, OneMeAuthSession>();
-
-export const maxAuth = (req: Request, res: Response) => {
-    const sessionId = Math.random().toString(36).substring(7);
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // для nginx
-
-    res.writeHead(200);
-
-    res.write(': SSE connected\n\n');
-
-    const userAgent: UserAgentData = req.body?.userAgent || {
-        deviceType: 'WEB',
-        locale: req.headers['accept-language']?.split(',')[0] || 'ru',
-        deviceLocale: 'ru',
-        osVersion: 'macOS',
-        deviceName: 'Chrome',
-        headerUserAgent: req.headers['user-agent'] || '',
-        appVersion: '26.2.1',
-        screen: '1920x1080 2.0x',
-        timezone: 'Europe/Moscow'
-    };
-
-    const session = new OneMeAuthSession(sessionId, userAgent, res);
-    sessions.set(sessionId, session);
-    session.start();
-
-    req.on('close', () => {
-        // sessions.delete(sessionId);
-        console.log(`Session ${sessionId} closed`);
-    });
-}
-
+// MAX QRCode auth callback
 export const maxCallback = asyncHandler(async (req: Request, res: Response) => {
     const sessionId =
         typeof req.query.sessionId === 'string'
             ? req.query.sessionId
             : null;
 
-    const session = sessions.get(sessionId!);
+    if (!sessionId) {
+        throw new AppError('Session id not provided', 400);
+    }
+
+    const session = maxAuthSessions.get(sessionId);
 
     if (!session) {
-        throw new AppError('Session id not provided', 400);
+        throw new AppError('Session not found or expired', 404);
     }
 
     if (!session.userData) {

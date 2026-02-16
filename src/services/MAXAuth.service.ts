@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import WebSocket from 'ws';
 import {OAuthUserData} from "@/types";
 
@@ -46,7 +45,8 @@ export type OneMeAuthResponse = OneMeMessage<{
 }>
 
 export class OneMeAuthSession {
-    private ws: WebSocket | null = null;
+    private ws: WebSocket | null = null; // WebSocket к MAX
+    private clientWs: WebSocket; // WebSocket к клиенту
     private seq = 0;
     private trackId: string | null = null;
     private pollingInterval: NodeJS.Timeout | null = null;
@@ -57,17 +57,24 @@ export class OneMeAuthSession {
     constructor(
         private sessionId: string,
         private userAgent: UserAgentData,
-        private sseResponse: Response,
+        clientWs: WebSocket,
     ) {
+        this.clientWs = clientWs;
         this.deviceId = this.generateDeviceId();
         console.log('[MAX Auth] 🚀 Создана новая сессия авторизации');
         console.log('[MAX Auth] SessionID:', sessionId);
         console.log('[MAX Auth] DeviceID:', this.deviceId);
 
-        sseResponse.on('close', () => {
-            console.log('[MAX Auth] 📡 SSE соединение закрыто клиентом');
+        // Слушаем закрытие соединения с клиентом
+        this.clientWs.on('close', () => {
+            console.log('[MAX Auth] 📡 WebSocket соединение с клиентом закрыто');
             this.cleanup();
-        })
+        });
+
+        // Клиент не должен ничего отправлять, но на всякий случай
+        this.clientWs.on('message', () => {
+            console.log('[MAX Auth] ⚠️ Получено сообщение от клиента (игнорируется)');
+        });
     }
 
     private generateDeviceId(): string {
@@ -78,25 +85,12 @@ export class OneMeAuthSession {
         });
     }
 
-    private sendSSE(event: string, data: any) {
-        const payload =
-            `event: ${event}\n` +
-            `data: ${JSON.stringify(data)}\n\n`;
-
-        console.log(`[MAX Auth] 📡 Отправка SSE клиенту - событие: "${event}":`, data);
-
-        // Отправляем данные
-        const success = this.sseResponse.write(payload);
-
-        if (!success) {
-            console.warn('[MAX Auth] ⚠️ Response buffer is full, waiting for drain');
-        }
-
-        // Принудительная отправка через нативный socket
-        const socket = (this.sseResponse as any).socket;
-        if (socket && typeof socket.write === 'function') {
-            // Заставляем socket отправить данные немедленно
-            socket.uncork?.();
+    private sendToClient(event: string, data: any) {
+        if (this.clientWs.readyState === WebSocket.OPEN) {
+            console.log(`[MAX Auth] 📡 Отправка клиенту - событие: "${event}":`, data);
+            this.clientWs.send(JSON.stringify({ event, data }));
+        } else {
+            console.warn('[MAX Auth] ⚠️ Не могу отправить клиенту - соединение закрыто');
         }
     }
 
@@ -108,7 +102,7 @@ export class OneMeAuthSession {
             opcode: payload.opcode!,
             payload: payload.payload
         };
-        console.log(`[MAX Auth] 📤 Отправка сообщения (opcode: ${message.opcode}, seq: ${message.seq}):`, message);
+        console.log(`[MAX Auth] 📤 Отправка сообщения в MAX (opcode: ${message.opcode}, seq: ${message.seq}):`, message);
         this.ws?.send(JSON.stringify(message));
     }
 
@@ -130,11 +124,11 @@ export class OneMeAuthSession {
     }
 
     private handleMessage(data: OneMeMessage) {
-        console.log(`[MAX Auth] 📥 Получено сообщение (opcode: ${data.opcode}, cmd: ${data.cmd}):`, JSON.stringify(data, null, 2));
+        console.log(`[MAX Auth] 📥 Получено сообщение от MAX (opcode: ${data.opcode}, cmd: ${data.cmd}):`, JSON.stringify(data, null, 2));
 
         if (data.opcode === 6 && data.cmd === 1) {
             console.log('[MAX Auth] ✅ Handshake успешен, запрашиваем QR-код');
-            this.sendSSE('status', { message: 'Получаем QR-код...' });
+            this.sendToClient('status', { message: 'Получаем QR-код...' });
             this.sendMessage({ opcode: 288 });
         }
 
@@ -142,7 +136,7 @@ export class OneMeAuthSession {
             console.log('[MAX Auth] ✅ QR-код получен:', data.payload.qrLink);
             this.trackId = data.payload.trackId;
 
-            this.sendSSE('qr', {
+            this.sendToClient('qr', {
                 qrLink: data.payload.qrLink,
                 trackId: this.trackId,
                 expiresAt: data.payload.expiresAt
@@ -183,7 +177,7 @@ export class OneMeAuthSession {
 
         if (data.opcode === 289 && data.payload?.status?.loginAvailable) {
             console.log('[MAX Auth] ✅ QR отсканирован, запрашиваем токен');
-            this.sendSSE('status', { message: 'QR отсканирован! Получаем токен...' });
+            this.sendToClient('status', { message: 'QR отсканирован! Получаем токен...' });
 
             if (this.pollingInterval) clearInterval(this.pollingInterval);
 
@@ -195,7 +189,7 @@ export class OneMeAuthSession {
 
         if (data.opcode === 291 && data.payload?.tokenAttrs) {
             console.log('[MAX Auth] ✅ Токен получен, авторизация успешна');
-            this.sendSSE('success', {
+            this.sendToClient('success', {
                 token: data.payload.tokenAttrs.LOGIN.token,
                 profile: data.payload.profile,
                 sessionId: this.sessionId,
@@ -204,7 +198,7 @@ export class OneMeAuthSession {
             const profile = data.payload?.profile?.contact;
 
             this.userData = {
-                providerId: profile?.id?.toString()!, // use profile id instead
+                providerId: profile?.id?.toString()!,
                 name: profile?.names[0].firstName! + ' ' + profile?.names[0].lastName!,
                 phone: profile?.phone?.toString(),
             }
@@ -214,7 +208,7 @@ export class OneMeAuthSession {
 
         if (data.cmd === 3 /* error */) {
             console.log('[MAX Auth] ⚠️ Ошибка от сервера (QR устарел), перезапускаем соединение');
-            this.sendSSE('status', { message: 'QR-код устарел, получаем новый...' });
+            this.sendToClient('status', { message: 'QR-код устарел, получаем новый...' });
 
             this.resetSocket();
         }
@@ -252,7 +246,7 @@ export class OneMeAuthSession {
                 const data = JSON.parse(rawData.toString());
                 this.handleMessage(data);
             } catch (e) {
-                console.error('[MAX Auth] ❌ Ошибка парсинга сообщения:', e);
+                console.error('[MAX Auth] ❌ Ошибка парсинга сообщения от MAX:', e);
                 console.error('[MAX Auth] Сырые данные:', rawData);
             }
         });
@@ -260,7 +254,7 @@ export class OneMeAuthSession {
         this.ws.on('error', (error: Error) => {
             console.error('[MAX Auth] ❌ WebSocket ошибка:', error.message);
             console.error('[MAX Auth] Полная ошибка:', error);
-            this.sendSSE('error', { message: error.message });
+            this.sendToClient('error', { message: error.message });
             this.cleanup();
         });
 
@@ -282,8 +276,10 @@ export class OneMeAuthSession {
             console.log('[MAX Auth] 🔌 Закрытие WebSocket');
             this.ws.close();
         }
-        console.log('[MAX Auth] 📡 Закрытие SSE соединения');
-        this.sseResponse.end();
+        if (this.clientWs.readyState === WebSocket.OPEN) {
+            console.log('[MAX Auth] 🔌 Закрытие клиентского WebSocket');
+            this.clientWs.close();
+        }
     }
 
     private resetSocket() {
