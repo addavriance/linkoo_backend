@@ -194,8 +194,6 @@ export class OneMeAuthSession {
                 name: profile?.names[0].firstName! + ' ' + profile?.names[0].lastName!,
                 phone: profile?.phone?.toString(),
             }
-
-            this.cleanup();
         }
 
         if (data.cmd === 3 /* error */) {
