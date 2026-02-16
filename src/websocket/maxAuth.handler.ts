@@ -1,7 +1,63 @@
 import { WebSocket } from 'ws';
 import { OneMeAuthSession, UserAgentData } from '../services/MAXAuth.service';
+import {SECOND} from "@/constants";
+import {pollImmediate} from "@/utils/polling";
 
-export const maxAuthSessions = new Map<string, OneMeAuthSession>();
+interface SessionData {
+    session: OneMeAuthSession;
+    createdAt: number;
+    closedAt: number | null;
+}
+
+const sessionStore = new Map<string, SessionData>();
+
+const SESSION_TTL = 30 * 1000;
+
+export const maxAuthSessions = {
+    get: (sessionId: string) => sessionStore.get(sessionId)?.session,
+    set: (sessionId: string, session: OneMeAuthSession) => {
+        sessionStore.set(sessionId, {
+            session,
+            createdAt: Date.now(),
+            closedAt: null
+        });
+    },
+    delete: (sessionId: string) => sessionStore.delete(sessionId),
+    has: (sessionId: string) => sessionStore.has(sessionId),
+    size: () => sessionStore.size,
+    markClosed: (sessionId: string) => {
+        const data = sessionStore.get(sessionId);
+        if (data) {
+            data.closedAt = Date.now();
+            console.log(`[MAX Auth Handler] 🕐 Сессия ${sessionId} помечена как закрытая (будет удалена через ${SESSION_TTL / 1000}с)`);
+        }
+    }
+};
+
+
+const cleanupExpiredSessions = () => {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    for (const [sessionId, data] of sessionStore.entries()) {
+        const isExpiredClosed = data.closedAt && (now - data.closedAt > SESSION_TTL);
+        const isStale = !data.closedAt && (now - data.createdAt > SESSION_TTL * 10); // 5 минут для зависших
+
+        if (isExpiredClosed || isStale) {
+            sessionStore.delete(sessionId);
+            cleanedCount++;
+            console.log(`[MAX Auth Handler] 🗑️ Сессия ${sessionId} удалена (${isStale ? 'зависшая' : 'истекла'})`);
+        }
+    }
+
+    if (cleanedCount > 0) {
+        console.log(`[MAX Auth Handler] 🧹 Очищено сессий: ${cleanedCount}, осталось: ${sessionStore.size}`);
+    }
+};
+
+export const startMaxSessionsCleanup = (intervalMs: number = 30 * SECOND): void => {
+    pollImmediate(cleanupExpiredSessions, intervalMs);
+};
 
 export const handleMaxAuthConnection = (ws: WebSocket) => {
     console.log('[MAX Auth Handler] 🔌 Новое WebSocket соединение');
@@ -41,8 +97,7 @@ export const handleMaxAuthConnection = (ws: WebSocket) => {
             session.start();
 
             ws.on('close', () => {
-                maxAuthSessions.delete(sessionId);
-                console.log(`[MAX Auth Handler] 🗑️ Сессия ${sessionId} удалена`);
+                maxAuthSessions.markClosed(sessionId);
             });
         } catch (error) {
             console.error('[MAX Auth Handler] ❌ Ошибка парсинга начального сообщения:', error);

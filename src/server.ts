@@ -4,6 +4,7 @@ import {HOUR} from "./constants";
 import {connectDatabase} from './config/database';
 import {startTokenCleanup} from "./services/token.service";
 import {startSubscriptionPolling} from "./services/subscription.service";
+import {startMaxSessionsCleanup} from "./websocket/maxAuth.handler";
 
 const startServer = async () => {
     try {
@@ -13,6 +14,8 @@ const startServer = async () => {
         console.log('Token cleanup service started');
         startSubscriptionPolling(24 * HOUR);
         console.log('Subscription service started');
+        startMaxSessionsCleanup();
+        console.log('MAX Auth session cleanup service started');
 
         const port = parseInt(env.PORT);
 
