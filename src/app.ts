@@ -14,9 +14,7 @@ import routes from './routes';
 import redirectRoutes from './routes/redirect.routes';
 import { handleMaxAuthConnection } from './websocket/maxAuth.handler';
 
-const app: Application = express();
-
-const wsInstance = expressWs(app);
+const { app } = expressWs(express());
 
 app.set('trust proxy', 1);
 
@@ -42,7 +40,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api', apiLimiter);
 
-(app as any).ws('/api/auth/max', (ws: any, req: any) => {
+app.ws('/api/auth/max', (ws: any, _req: any) => {
     console.log('[App] WebSocket connection для MAX auth');
     handleMaxAuthConnection(ws);
 });
