@@ -7,7 +7,7 @@ import {validate} from '../middleware/validator';
 import {refreshTokenSchema} from '../validators/auth.validator';
 import { handleMaxAuthConnection } from '../websocket/maxAuth.handler';
 
-const router = Router();
+const router = Router() as any; // cast to any для поддержки .ws()
 
 router.get('/google', authLimiter, authController.googleAuth);
 router.get('/google/callback', authController.googleCallback);
