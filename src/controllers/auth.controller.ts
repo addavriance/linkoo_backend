@@ -8,11 +8,13 @@ import {
 } from '@/services/token.service';
 import * as oauthService from '../services/oauth.service';
 import {successResponse} from '@/utils/response';
-import {AppError} from '@/utils/errors';
+import {AppError, NotFoundError} from '@/utils/errors';
 import {env} from '@/config/env';
 import {OAuthProvider, OAuthUserData} from '@/types';
 import {asyncHandler} from '@/utils/asyncHandler';
 import { maxAuthSessions } from '@/websocket/maxAuth.handler';
+import {IRefreshToken, RefreshToken} from "@/models/RefreshToken";
+import {DeleteResult} from "mongoose";
 
 // Helper to handle OAuth callback
 const handleOAuthCallback = async (
@@ -211,10 +213,6 @@ export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
 
 // Get current user
 export const me = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.userId) {
-        throw new AppError('Authentication required', 401);
-    }
-
     const user = await User.findById(req.userId).select('-__v');
     if (!user) {
         throw new AppError('User not found', 404);
@@ -222,3 +220,23 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
 
     res.json(successResponse(user));
 });
+
+export const sessions = asyncHandler(async (req: Request, res: Response) => {
+    const refreshTokens = await RefreshToken.find({userId: req.userId, isRevoked: false}, 'userId deviceInfo ipAddress token createdAt').lean();
+
+    res.json(successResponse(refreshTokens));
+})
+
+export const revokeSession = asyncHandler(async (req: Request, res: Response) => {
+    const {id} = req.params;
+
+    const result = await RefreshToken.findOne({_id: id});
+
+    if (!result) {
+        throw new NotFoundError('Session');
+    }
+
+    revokeRefreshToken(result.token);
+
+    res.json(successResponse({}));
+})

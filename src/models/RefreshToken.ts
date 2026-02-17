@@ -4,6 +4,7 @@ export interface IRefreshToken extends Document {
     _id: mongoose.Types.ObjectId;
     userId: mongoose.Types.ObjectId;
     token: string;
+    sessionId: string; // Привязка к access token
     deviceInfo?: string;
     ipAddress?: string;
     expiresAt: Date;
@@ -26,6 +27,11 @@ const RefreshTokenSchema: Schema<IRefreshToken, IRefreshTokenModel> = new Schema
             type: String,
             required: true,
             unique: true,
+        },
+        sessionId: {
+            type: String,
+            required: true,
+            index: true,
         },
         deviceInfo: String,
         ipAddress: String,

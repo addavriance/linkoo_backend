@@ -3,7 +3,7 @@ import * as authController from '../controllers/auth.controller';
 import {authenticate} from '@/middleware/auth.middleware';
 import {authLimiter, authCheckLimiter} from '@/middleware/rateLimiter';
 import {validate} from '@/middleware/validator';
-import {refreshTokenSchema} from '@/validators/auth.validator';
+import {refreshTokenSchema, revokeSessionSchema} from '@/validators/auth.validator';
 
 const router = Router();
 
@@ -32,5 +32,8 @@ router.post('/logout', authController.logout);
 router.post('/logout-all', authenticate, authController.logoutAll);
 
 router.get('/me', authCheckLimiter, authenticate, authController.me);
+
+router.get('/sessions', authCheckLimiter, authenticate, authController.sessions);
+router.delete('/session/:id', authCheckLimiter, authenticate, validate(revokeSessionSchema), authController.revokeSession);
 
 export default router;

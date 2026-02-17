@@ -50,6 +50,7 @@ export interface TokenPayload {
     userId: string;
     email: string;
     accountType: AccountType;
+    sessionId: string;
 }
 
 export interface OAuthUserData {

@@ -15,10 +15,13 @@ export const generateTokenPair = async (
     deviceInfo?: string,
     ipAddress?: string
 ): Promise<TokenPair> => {
+    const sessionId = crypto.randomBytes(16).toString('hex');
+
     const payload: TokenPayload = {
         userId: user._id.toString(),
         email: user.email,
         accountType: user.accountType,
+        sessionId,
     };
 
     const accessToken = jwt.sign(payload, env.JWT_SECRET, {
@@ -33,6 +36,7 @@ export const generateTokenPair = async (
     await RefreshToken.create({
         userId: user._id,
         token: refreshTokenValue,
+        sessionId,
         deviceInfo,
         ipAddress,
         expiresAt,
@@ -50,6 +54,22 @@ export const verifyAccessToken = (token: string): TokenPayload => {
         issuer: 'linkoo.dev',
     }) as TokenPayload;
 };
+
+export const verifyRefreshToken = async (sessionId: string, userId: string): Promise<void> => {
+    const refreshToken = await RefreshToken.findOne({
+        userId,
+        sessionId,
+        expiresAt: { $gt: new Date() }
+    });
+
+    if (!refreshToken) {
+        throw new Error('TokenRevokedError');
+    }
+
+    if (refreshToken.isRevoked) {
+        throw new Error('TokenRevokedError');
+    }
+}
 
 export const refreshAccessToken = async (
     refreshToken: string,

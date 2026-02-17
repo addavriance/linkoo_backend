@@ -1,5 +1,5 @@
 import {Request, Response, NextFunction} from 'express';
-import {verifyAccessToken} from '@/services/token.service';
+import {verifyAccessToken, verifyRefreshToken} from '@/services/token.service';
 import {AppError} from '@/utils/errors';
 import {User, IUser} from '@/models/User';
 
@@ -18,6 +18,8 @@ export const authenticate = async (
         const token = authHeader.substring(7);
         const payload = verifyAccessToken(token);
 
+        await verifyRefreshToken(payload.sessionId, payload.userId);
+
         req.userId = payload.userId;
         req.accountType = payload.accountType;
 
@@ -27,6 +29,8 @@ export const authenticate = async (
             next(new AppError('Token expired', 401));
         } else if (error.name === 'JsonWebTokenError') {
             next(new AppError('Invalid token', 401));
+        } else if (error.message === 'TokenRevokedError') {
+            next(new AppError('Session revoked', 401));
         } else {
             next(error);
         }

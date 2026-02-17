@@ -23,5 +23,11 @@ export const updateUserSchema = z.object({
     }),
 });
 
+export const revokeSessionSchema = z.object({
+    params: z.object({
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid session ID'),
+    }),
+})
+
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>['body'];
 export type UpdateUserInput = z.infer<typeof updateUserSchema>['body'];
