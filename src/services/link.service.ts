@@ -46,6 +46,10 @@ export const createLink = async (
         }
     }
 
+    if (!userId) {
+        throw new ForbiddenError("Can't create card-link for unauthorized user");
+    }
+
     const link = await ShortenedLink.create({
         userId,
         targetType: data.targetType,
