@@ -1,4 +1,4 @@
-import {ShortenedLink, IShortenedLink, IClickAnalytics} from '@/models/ShortenedLink';
+import {ShortenedLink, IShortenedLink} from '@/models/ShortenedLink';
 import {Card} from '@/models/Card';
 import {CreateLinkInput, UpdateLinkInput} from '@/validators/link.validator';
 import {
@@ -153,32 +153,10 @@ export const deleteLink = async (
     await link.save();
 };
 
-export const trackClick = async (
-    slug: string,
-    analytics: Partial<IClickAnalytics>
-): Promise<void> => {
-    await ShortenedLink.updateOne(
-        {slug, isActive: true},
-        {
-            $inc: {clickCount: 1},
-            $push: {
-                clicks: {
-                    $each: [{timestamp: new Date(), ...analytics}],
-                    $slice: -1000, // Keep only last 1000 clicks
-                },
-            },
-        }
-    );
-};
-
 export const getLinkStats = async (
     slug: string,
     userId: string
-): Promise<{
-    clickCount: number;
-    recentClicks: IClickAnalytics[];
-    createdAt: Date;
-}> => {
+): Promise<{ createdAt: Date }> => {
     const link = await ShortenedLink.findOne({slug, isActive: true}) as IShortenedLink;
     if (!link) {
         throw new NotFoundError('Link');
@@ -188,11 +166,7 @@ export const getLinkStats = async (
         throw new ForbiddenError('You can only view stats for your own links');
     }
 
-    return {
-        clickCount: link.clickCount,
-        recentClicks: link.clicks?.slice(-100) || [],
-        createdAt: link.createdAt,
-    };
+    return { createdAt: link.createdAt };
 };
 
 export const getLinkByCardId = async (

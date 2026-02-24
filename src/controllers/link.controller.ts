@@ -80,7 +80,6 @@ export const getLinkByCardId = asyncHandler(async (req: Request, res: Response) 
     res.json(successResponse({
         slug: link.slug,
         createdAt: link.createdAt,
-        clickCount: link.clickCount,
     }));
 });
 
@@ -94,13 +93,6 @@ export const redirect = asyncHandler(async (req: Request, res: Response) => {
     if (parts.length > 2 && !['www', 'api'].includes(parts[0])) {
         subdomain = parts[0];
     }
-
-    const analytics = {
-        userAgent: req.headers['user-agent'],
-        referer: req.headers.referer,
-    };
-
-    linkService.trackClick(slug, analytics).catch(console.error);
 
     const target = await linkService.getRedirectTarget(slug, subdomain);
 

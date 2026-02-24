@@ -1,5 +1,6 @@
 import {Request, Response} from 'express';
 import * as cardService from '../services/card.service';
+import * as analyticsService from '../services/analytics.service';
 import {successResponse, paginatedResponse} from '@/utils/response';
 import {asyncHandler} from '@/utils/asyncHandler';
 
@@ -37,6 +38,14 @@ export const deleteCard = asyncHandler(async (req: Request, res: Response) => {
 
 export const trackView = asyncHandler(async (req: Request, res: Response) => {
     const {id} = req.params;
+
+    // Non-blocking analytics recording
+    analyticsService.recordView(id, {
+        country: req.headers['cf-ipcountry'] as string,
+        userAgent: req.headers['user-agent'],
+        referer: req.headers['referer'],
+    }).catch(console.error);
+
     await cardService.incrementViewCount(id);
     res.json(successResponse({message: 'View tracked'}));
 });

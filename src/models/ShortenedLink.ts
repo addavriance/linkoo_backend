@@ -1,14 +1,6 @@
 import mongoose, {Schema, Document, Model} from 'mongoose';
 import {LinkTargetType} from '@/types';
 
-export interface IClickAnalytics {
-    timestamp: Date;
-    userAgent?: string;
-    referer?: string;
-    country?: string;
-    city?: string;
-}
-
 export interface IShortenedLink extends Document {
     _id: mongoose.Types.ObjectId;
 
@@ -23,26 +15,12 @@ export interface IShortenedLink extends Document {
     // Custom subdomain (paid feature: username.linkoo.dev)
     subdomain?: string;
 
-    clickCount: number;
-    clicks?: IClickAnalytics[];
-
     isActive: boolean;
     expiresAt?: Date;
 
     createdAt: Date;
     updatedAt: Date;
 }
-
-const ClickAnalyticsSchema = new Schema<IClickAnalytics>(
-    {
-        timestamp: {type: Date, default: Date.now},
-        userAgent: String,
-        referer: String,
-        country: String,
-        city: String,
-    },
-    {_id: false}
-);
 
 export interface IShortenedLinkModel extends Model<IShortenedLink, IShortenedLinkModel> {}
 
@@ -82,11 +60,6 @@ const ShortenedLinkSchema: Schema<IShortenedLink, IShortenedLinkModel> = new Sch
             sparse: true,
             index: true,
         },
-        clickCount: {
-            type: Number,
-            default: 0,
-        },
-        clicks: [ClickAnalyticsSchema],
         isActive: {
             type: Boolean,
             default: true,
