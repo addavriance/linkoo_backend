@@ -81,5 +81,24 @@ export const deleteCardSchema = z.object({
     }),
 });
 
+const RESERVED_SUBDOMAINS = ['www', 'api', 'netdata', 'mail'];
+
+export const setSubdomainSchema = z.object({
+    params: z.object({
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid card ID'),
+    }),
+    body: z.object({
+        subdomain: z
+            .string()
+            .min(3, 'Subdomain must be at least 3 characters')
+            .max(32, 'Subdomain must be at most 32 characters')
+            .regex(/^[a-z0-9-]+$/, 'Only lowercase letters, digits and hyphens are allowed')
+            .refine((val) => !RESERVED_SUBDOMAINS.includes(val), {
+                message: 'This subdomain is reserved',
+            }),
+    }),
+});
+
 export type CreateCardInput = z.infer<typeof createCardSchema>['body'];
 export type UpdateCardInput = z.infer<typeof updateCardSchema>['body'];
+export type SetSubdomainInput = z.infer<typeof setSubdomainSchema>['body'];

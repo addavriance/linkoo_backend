@@ -1,6 +1,6 @@
 import {Card, ICard} from '@/models/Card';
 import {CreateCardInput, UpdateCardInput} from '@/validators/card.validator';
-import {NotFoundError, ForbiddenError} from '@/utils/errors';
+import {NotFoundError, ForbiddenError, ConflictError} from '@/utils/errors';
 import {ShortenedLink} from '@/models/ShortenedLink';
 import {createSlug} from '@/utils/slugGenerator';
 
@@ -144,6 +144,50 @@ export const incrementViewCount = async (cardId: string): Promise<void> => {
             $set: {lastViewedAt: new Date()},
         }
     );
+};
+
+export const setCardSubdomain = async (
+    cardId: string,
+    userId: string,
+    subdomain: string
+): Promise<ICard & { slug?: string }> => {
+    const card = await Card.findOne({_id: cardId, isActive: true}) as ICard;
+
+    if (!card) throw new NotFoundError('Card');
+    if (card.userId.toString() !== userId) throw new ForbiddenError('You can only edit your own cards');
+
+    const existing = await Card.findOne({subdomain, _id: {$ne: cardId}});
+    if (existing) throw new ConflictError('Этот поддомен уже занят');
+
+    card.subdomain = subdomain;
+    await card.save();
+
+    const link = await ShortenedLink.findOne({cardId: card._id, isActive: true}).select('slug');
+    return Object.assign(card.toObject(), {slug: link?.slug});
+};
+
+export const removeCardSubdomain = async (
+    cardId: string,
+    userId: string
+): Promise<void> => {
+    const card = await Card.findOne({_id: cardId, isActive: true});
+
+    if (!card) throw new NotFoundError('Card');
+    if (card.userId.toString() !== userId) throw new ForbiddenError('You can only edit your own cards');
+
+    await Card.updateOne({_id: cardId}, {$unset: {subdomain: ''}});
+};
+
+export const getCardBySubdomain = async (
+    subdomain: string
+): Promise<ICard & { slug?: string }> => {
+    const card = await Card.findOne({subdomain, isActive: true}) as ICard;
+
+    if (!card) throw new NotFoundError('Card');
+    if (!card.isPublic) throw new ForbiddenError('This card is private');
+
+    const link = await ShortenedLink.findOne({cardId: card._id, isActive: true}).select('slug');
+    return Object.assign(card.toObject(), {slug: link?.slug});
 };
 
 export const getPublicCards = async (

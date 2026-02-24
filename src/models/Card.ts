@@ -44,6 +44,8 @@ export interface ICard extends Document {
 
     visibility: IVisibilitySettings;
 
+    subdomain?: string;
+
     isActive: boolean;
     isPublic: boolean;
 
@@ -180,6 +182,13 @@ const CardSchema: Schema<ICard, ICardModel> = new Schema<ICard, ICardModel>(
                 showPhone: true,
                 showLocation: true,
             }),
+        },
+        subdomain: {
+            type: String,
+            unique: true,
+            sparse: true,
+            lowercase: true,
+            trim: true,
         },
         isActive: {
             type: Boolean,

@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import * as cardController from '../controllers/card.controller';
 import {authenticate, optionalAuth} from '@/middleware/auth.middleware';
-import {checkCardLimit} from '@/middleware/accountType';
+import {checkCardLimit, requirePaid} from '@/middleware/accountType';
 import {viewLimiter} from '@/middleware/rateLimiter';
 import {validate} from '@/middleware/validator';
 import {
@@ -9,6 +9,7 @@ import {
     updateCardSchema,
     getCardSchema,
     deleteCardSchema,
+    setSubdomainSchema,
 } from '@/validators/card.validator';
 
 const router = Router();
@@ -34,6 +35,10 @@ router.post(
     validate(createCardSchema),
     cardController.createCard
 );
+
+router.patch('/:id/subdomain', requirePaid, validate(setSubdomainSchema), cardController.setSubdomain);
+
+router.delete('/:id/subdomain', requirePaid, validate(getCardSchema), cardController.removeSubdomain);
 
 router.patch('/:id', validate(updateCardSchema), cardController.updateCard);
 
