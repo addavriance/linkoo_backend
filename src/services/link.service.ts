@@ -46,7 +46,7 @@ export const createLink = async (
         }
     }
 
-    if (!userId) {
+    if (!userId && data.targetType === 'card' && data.cardId) {
         throw new ForbiddenError("Can't create card-link for unauthorized user");
     }
 
