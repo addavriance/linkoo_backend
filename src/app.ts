@@ -5,9 +5,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
 
 import {env} from './config/env';
 import {corsOptions} from './config/cors';
+import {swaggerSpec} from './config/swagger';
 import {apiLimiter} from './middleware/rateLimiter';
 import {errorHandler, notFoundHandler} from './middleware/errorHandler';
 import routes from './routes';
@@ -29,6 +31,19 @@ app.use(compression());
 if (env.NODE_ENV !== 'test') {
     app.use(morgan('combined'));
 }
+
+app.use('/api-docs', (_req: express.Request, res: express.Response, next: express.NextFunction) => {
+    res.removeHeader('Content-Security-Policy');
+    next();
+}, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'Linkoo API Docs',
+    swaggerOptions: {persistAuthorization: true},
+}));
+
+app.get('/api-docs.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
 
 app.get('/health', (_req, res) => {
     res.json({
