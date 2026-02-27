@@ -5,6 +5,7 @@ import cardRoutes from './card.routes';
 import linkRoutes from './link.routes';
 import paymentRoutes from './payment.routes';
 import analyticsRoutes from './analytics.routes';
+import adminRoutes from './admin.routes';
 import * as cardController from '../controllers/card.controller';
 
 const router = Router();
@@ -15,6 +16,7 @@ router.use('/cards', cardRoutes);
 router.use('/links', linkRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/admin', adminRoutes);
 
 /**
  * @swagger
@@ -45,7 +47,7 @@ router.use('/analytics', analyticsRoutes);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.get('/subdomain/:subdomain', cardController.getCardBySubdomain);
 

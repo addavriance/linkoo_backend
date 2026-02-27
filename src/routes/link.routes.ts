@@ -38,7 +38,7 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.get('/:slug', validate(getLinkSchema), linkController.getLink);
 
@@ -94,15 +94,19 @@ router.get('/:slug', validate(getLinkSchema), linkController.getLink);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  *       409:
  *         description: Slug уже занят
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error409'
  *       429:
  *         description: Превышен лимит создания ссылок
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error429'
  */
 router.post(
     '/',
@@ -177,13 +181,13 @@ router.get('/', linkController.getMyLinks);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  *       404:
  *         description: Ссылка не найдена
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.patch('/:slug', validate(updateLinkSchema), linkController.updateLink);
 
@@ -213,7 +217,7 @@ router.patch('/:slug', validate(updateLinkSchema), linkController.updateLink);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  */
 router.delete('/:slug', validate(deleteLinkSchema), linkController.deleteLink);
 
@@ -243,7 +247,7 @@ router.delete('/:slug', validate(deleteLinkSchema), linkController.deleteLink);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  */
 router.get('/:slug/stats', linkController.getLinkStats);
 
@@ -275,7 +279,7 @@ router.get('/:slug/stats', linkController.getLinkStats);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.get('/card/:cardId', linkController.getLinkByCardId);
 

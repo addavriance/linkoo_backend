@@ -4,6 +4,8 @@ export type OAuthProvider = 'google' | 'vk' | 'discord' | 'github' | 'max';
 
 export type AccountType = 'free' | 'paid';
 
+export type UserRole = 'user' | 'moderator' | 'admin';
+
 export type SocialPlatform =
     | 'telegram'
     | 'whatsapp'
@@ -26,6 +28,7 @@ declare global {
             user?: IUser;
             userId?: string;
             accountType?: AccountType;
+            role?: UserRole;
         }
     }
 }
@@ -50,6 +53,7 @@ export interface TokenPayload {
     userId: string;
     email: string;
     accountType: AccountType;
+    role: UserRole;
     sessionId: string;
 }
 

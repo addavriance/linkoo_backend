@@ -3,7 +3,7 @@ import {formatResponse} from '@/utils/response';
 
 export const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 600,
     standardHeaders: true,
     legacyHeaders: false,
     handler: (_req, res) => {
@@ -21,7 +21,7 @@ export const apiLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 минут
-    max: 30, // 30 попыток за 15 минут
+    max: 20, // 20 попыток OAuth-редиректов за 15 минут
     standardHeaders: true,
     legacyHeaders: false,
     handler: (_req, res) => {
@@ -39,7 +39,7 @@ export const authLimiter = rateLimit({
 
 export const authCheckLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 минута
-    max: 30, // 30 запросов в минуту
+    max: 120, // 120 запросов в минуту (refresh, /me, sessions)
     standardHeaders: true,
     legacyHeaders: false,
     handler: (_req, res) => {
@@ -57,7 +57,7 @@ export const authCheckLimiter = rateLimit({
 
 export const linkCreationLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
-    max: 50,
+    max: 200,
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => req.userId || req.ip || 'anonymous',
@@ -77,7 +77,7 @@ export const linkCreationLimiter = rateLimit({
 // Card view tracking (very lenient)
 export const viewLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 30, // 30 views per minute per IP
+    max: 120, // 120 view events per minute per IP
     standardHeaders: false,
     legacyHeaders: false,
 });

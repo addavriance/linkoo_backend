@@ -26,12 +26,45 @@ const options: swaggerJsdoc.Options = {
                 },
             },
             schemas: {
-                Error: {
+                ErrorResponse: {
                     type: 'object',
                     properties: {
                         success: {type: 'boolean', example: false},
-                        message: {type: 'string', example: 'Ошибка авторизации'},
+                        error: {
+                            type: 'object',
+                            properties: {
+                                message: {type: 'string'},
+                                code: {type: 'integer'},
+                                details: {},
+                            },
+                            required: ['message', 'code'],
+                        },
                     },
+                    required: ['success', 'error'],
+                },
+                Error400: {
+                    allOf: [{$ref: '#/components/schemas/ErrorResponse'}],
+                    example: {success: false, error: {message: 'Validation failed', code: 400, details: 'name: Required'}},
+                },
+                Error401: {
+                    allOf: [{$ref: '#/components/schemas/ErrorResponse'}],
+                    example: {success: false, error: {message: 'Authentication required', code: 401}},
+                },
+                Error403: {
+                    allOf: [{$ref: '#/components/schemas/ErrorResponse'}],
+                    example: {success: false, error: {message: 'Forbidden', code: 403}},
+                },
+                Error404: {
+                    allOf: [{$ref: '#/components/schemas/ErrorResponse'}],
+                    example: {success: false, error: {message: 'Not found', code: 404}},
+                },
+                Error409: {
+                    allOf: [{$ref: '#/components/schemas/ErrorResponse'}],
+                    example: {success: false, error: {message: 'Conflict: resource already exists', code: 409}},
+                },
+                Error429: {
+                    allOf: [{$ref: '#/components/schemas/ErrorResponse'}],
+                    example: {success: false, error: {message: 'Too many requests, please try again later', code: 429}},
                 },
                 MessageResponse: {
                     type: 'object',
@@ -158,6 +191,10 @@ const options: swaggerJsdoc.Options = {
                         accountType: {
                             type: 'string',
                             enum: ['free', 'paid'],
+                        },
+                        role: {
+                            type: 'string',
+                            enum: ['user', 'moderator', 'admin'],
                         },
                         profile: {$ref: '#/components/schemas/UserProfile'},
                         settings: {

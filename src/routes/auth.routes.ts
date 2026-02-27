@@ -40,7 +40,7 @@ router.get('/google', authLimiter, authController.googleAuth);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.get('/google/callback', authController.googleCallback);
 
@@ -153,7 +153,7 @@ router.get('/discord/callback', authController.discordCallback);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -204,7 +204,7 @@ router.get('/max/callback', authController.maxCallback);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.post(
     '/refresh',
@@ -260,7 +260,7 @@ router.post('/logout', authController.logout);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.post('/logout-all', authenticate, authController.logoutAll);
 
@@ -284,7 +284,7 @@ router.post('/logout-all', authenticate, authController.logoutAll);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.get('/me', authCheckLimiter, authenticate, authController.me);
 
@@ -311,7 +311,7 @@ router.get('/me', authCheckLimiter, authenticate, authController.me);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.get('/sessions', authCheckLimiter, authenticate, authController.sessions);
 
@@ -342,13 +342,13 @@ router.get('/sessions', authCheckLimiter, authenticate, authController.sessions)
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  *       404:
  *         description: Сессия не найдена
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.delete('/session/:id', authCheckLimiter, authenticate, validate(revokeSessionSchema), authController.revokeSession);
 

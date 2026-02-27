@@ -62,7 +62,7 @@ router.get('/public', cardController.getPublicCards);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.get(
     '/:id',
@@ -97,9 +97,13 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  *       429:
  *         description: Превышен лимит запросов
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error429'
  */
 router.post('/:id/view', viewLimiter, cardController.trackView);
 
@@ -127,7 +131,7 @@ router.use(authenticate);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.get('/', cardController.getMyCards);
 
@@ -160,13 +164,13 @@ router.get('/', cardController.getMyCards);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  *       403:
  *         description: Достигнут лимит карточек для free-аккаунта
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  */
 router.post(
     '/',
@@ -220,19 +224,19 @@ router.post(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  *       403:
  *         description: Требуется Premium-аккаунт
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  *       409:
  *         description: Поддомен уже занят
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error409'
  */
 router.patch('/:id/subdomain', requirePaid, validate(setSubdomainSchema), cardController.setSubdomain);
 
@@ -263,7 +267,7 @@ router.patch('/:id/subdomain', requirePaid, validate(setSubdomainSchema), cardCo
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  */
 router.delete('/:id/subdomain', requirePaid, validate(getCardSchema), cardController.removeSubdomain);
 
@@ -299,19 +303,19 @@ router.delete('/:id/subdomain', requirePaid, validate(getCardSchema), cardContro
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  *       403:
  *         description: Нет доступа к карточке
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  *       404:
  *         description: Карточка не найдена
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.patch('/:id', validate(updateCardSchema), cardController.updateCard);
 
@@ -341,13 +345,13 @@ router.patch('/:id', validate(updateCardSchema), cardController.updateCard);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  *       404:
  *         description: Карточка не найдена
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.delete('/:id', validate(deleteCardSchema), cardController.deleteCard);
 

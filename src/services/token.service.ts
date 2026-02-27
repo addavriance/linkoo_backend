@@ -21,6 +21,7 @@ export const generateTokenPair = async (
         userId: user._id.toString(),
         email: user.email,
         accountType: user.accountType,
+        role: user.role ?? 'user',
         sessionId,
     };
 

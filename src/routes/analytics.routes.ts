@@ -39,11 +39,17 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  *       429:
  *         description: Превышен лимит запросов
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error429'
  */
 router.post('/:cardId/event', viewLimiter, analyticsController.trackCardEvent);
+
+router.use(authenticate);
 
 /**
  * @swagger
@@ -83,20 +89,20 @@ router.post('/:cardId/event', viewLimiter, analyticsController.trackCardEvent);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  *       403:
  *         description: Нет доступа (не владелец карточки или free-аккаунт)
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error403'
  *       404:
  *         description: Карточка не найдена
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
-router.get('/:cardId', authenticate, analyticsController.getCardAnalytics);
+router.get('/:cardId', analyticsController.getCardAnalytics);
 
 export default router;

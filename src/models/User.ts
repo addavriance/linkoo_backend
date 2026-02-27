@@ -1,5 +1,5 @@
 import mongoose, {Schema, Document, model, Model} from 'mongoose';
-import {OAuthProvider, AccountType} from '@/types';
+import {OAuthProvider, AccountType, UserRole} from '@/types';
 
 export interface IUserProfile {
     name: string;
@@ -27,6 +27,8 @@ export interface IUser extends Document {
     provider: OAuthProvider;
     providerId: string;
     accountType: AccountType;
+    role: UserRole;
+    isActive: boolean;
     profile: IUserProfile;
     subscription?: ISubscription;
     settings: IUserSettings;
@@ -92,6 +94,15 @@ const UserSchema: Schema<IUser, IUserModel> = new Schema<IUser, IUserModel>(
             type: String,
             enum: ['free', 'paid'],
             default: 'free',
+        },
+        role: {
+            type: String,
+            enum: ['user', 'moderator', 'admin'],
+            default: 'user',
+        },
+        isActive: {
+            type: Boolean,
+            default: true,
         },
         profile: {
             type: UserProfileSchema,

@@ -31,7 +31,7 @@ router.use(authenticate);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.get('/me', userController.getProfile);
 
@@ -75,7 +75,7 @@ router.get('/me', userController.getProfile);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  */
 router.patch('/me', validate(updateUserSchema), userController.updateProfile);
 
@@ -117,7 +117,7 @@ router.patch('/me', validate(updateUserSchema), userController.updateProfile);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  */
 router.post('/me/avatar', avatarUpload.single('avatar'), userController.uploadAvatar);
 
@@ -142,7 +142,7 @@ router.post('/me/avatar', avatarUpload.single('avatar'), userController.uploadAv
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.delete('/me', userController.deleteAccount);
 

@@ -40,7 +40,7 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error400'
  */
 router.post('/webhook', handleWebhook);
 
@@ -67,7 +67,7 @@ router.use(authenticate);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.post('/create', createPayment);
 
@@ -92,7 +92,7 @@ router.post('/create', createPayment);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.post('/link-card', linkCard);
 
@@ -119,7 +119,7 @@ router.post('/link-card', linkCard);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error401'
  */
 router.get('/history', getPaymentHistory);
 
@@ -170,7 +170,7 @@ router.get('/methods', getPaymentMethods);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.delete('/methods/:paymentMethodId', deletePaymentMethod);
 
@@ -202,7 +202,7 @@ router.delete('/methods/:paymentMethodId', deletePaymentMethod);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/Error404'
  */
 router.get('/:paymentKey', getPaymentStatus);
 

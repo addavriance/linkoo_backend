@@ -22,6 +22,7 @@ export const authenticate = async (
 
         req.userId = payload.userId;
         req.accountType = payload.accountType;
+        req.role = payload.role ?? 'user';
 
         next();
     } catch (error: any) {
@@ -50,6 +51,7 @@ export const optionalAuth = async (
             const payload = verifyAccessToken(token);
             req.userId = payload.userId;
             req.accountType = payload.accountType;
+            req.role = payload.role ?? 'user';
         }
 
         next();
