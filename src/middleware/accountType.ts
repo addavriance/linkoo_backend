@@ -1,6 +1,11 @@
 import {Request, Response, NextFunction} from 'express';
 import {AppError} from '@/utils/errors';
 import {Card} from '@/models/Card';
+import {ServerTOTPValidator} from '@local/linkoo_shared'
+
+const validator = new ServerTOTPValidator({
+    codeLength: 10,
+});
 
 export const requirePaid = (
     req: Request,
@@ -52,3 +57,27 @@ export const checkSubdomainAccess = (
     }
     next();
 };
+
+export const checkTOTP = (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user) {
+        const uid = req.headers['x-user-id']?.toString();
+        const code = req.headers['x-totp-code']?.toString();
+        const timestamp = parseInt(req.headers['x-timestamp']?.toString()!);
+
+        if (!(uid && code && timestamp)) {
+            throw new AppError('Request insecure', 403);
+        }
+
+        const validationResult = validator.validateCode({
+            uid,
+            code,
+            timestamp
+        })
+
+        if (!validationResult.isValid) {
+            throw new AppError('Request insecure', 403);
+        }
+
+        next();
+    }
+}
