@@ -11,7 +11,7 @@ RUN cd linkoo_shared && npm install && npm run build
 
 RUN npm pkg set dependencies."@local/linkoo_shared"="file:./linkoo_shared"
 
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Сборка TypeScript приложения
 FROM base AS builder
