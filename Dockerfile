@@ -3,15 +3,28 @@ FROM node:20-alpine AS base
 # Установка production зависимостей
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
+
+COPY package*.json ./
+COPY linkoo_shared ./linkoo_shared
+
+RUN cd linkoo_shared && npm install && npm run build
+
+RUN npm pkg set dependencies."@local/linkoo_shared"="file:./linkoo_shared"
+
 RUN npm ci --omit=dev && npm cache clean --force
 
 # Сборка TypeScript приложения
 FROM base AS builder
 WORKDIR /app
-COPY package.json package-lock.json ./
+
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/linkoo_shared ./linkoo_shared
+
+
+COPY package*.json ./
 COPY tsconfig.json ./
-RUN npm ci
+
 COPY src ./src
 RUN npm run build
 
@@ -26,6 +39,7 @@ WORKDIR /app
 RUN apk add --no-cache wget
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/linkoo_shared ./linkoo_shared
 
 COPY --from=builder /app/dist ./dist
 
