@@ -31,7 +31,13 @@ jobs:
             set -e
             cd /home/${{ secrets.SERVER_USER }}/linkoo_backend
             git pull origin main
+
+            echo "📦 Copying shared-utils to build context..."
+            rm -rf ./linkoo_shared
+            cp -r /home/${{ secrets.SERVER_USER }}/linkoo_shared ./linkoo_shared
+            
             cd /home/${{ secrets.SERVER_USER }}
+            
             docker compose build backend
             docker compose up -d --no-build backend
             docker image prune -f
