@@ -45,7 +45,7 @@ export async function uploadFile(
         const dir = path.join(UPLOAD_DIR, folder);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(path.join(dir, filename), buffer);
-        return `${env.API_URL}/images/${folder}/${filename}`;
+        return `${env.API_URL}/api/images/${folder}/${filename}`;
     }
 
     await new Upload({
@@ -58,7 +58,7 @@ export async function uploadFile(
         },
     }).done();
 
-    return `${env.API_URL}/images/${folder}/${filename}`;
+    return `${env.API_URL}/api/images/${folder}/${filename}`;
 }
 
 export async function deleteFile(fileUrl: string): Promise<void> {
