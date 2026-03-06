@@ -11,7 +11,8 @@ import {createSlug, isReservedSlug} from '@/utils/slugGenerator';
 
 export const createLink = async (
     data: CreateLinkInput,
-    userId?: string
+    userId?: string,
+    guestId?: string
 ): Promise<IShortenedLink> => {
     let slug = data.customSlug;
     if (slug && userId) {
@@ -39,9 +40,12 @@ export const createLink = async (
     }
 
     if (data.targetType === 'url' && data.rawData) {
-        const link = await ShortenedLink.findOne({rawData: data.rawData, isActive: true});
+        const link = await ShortenedLink.findOne({guestId, isActive: true}) as IShortenedLink | null;
 
         if (link) {
+            link.rawData = data.rawData;
+            await link.save();
+
             return link;
         }
     }
@@ -52,6 +56,7 @@ export const createLink = async (
 
     const link = await ShortenedLink.create({
         userId,
+        guestId,
         targetType: data.targetType,
         rawData: data.rawData,
         cardId: data.cardId,

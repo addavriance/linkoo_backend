@@ -5,6 +5,7 @@ export interface IShortenedLink extends Document {
     _id: mongoose.Types.ObjectId;
 
     userId?: mongoose.Types.ObjectId;
+    guestId?: string;
 
     targetType: LinkTargetType;
     rawData?: string; // base64 (будет содержать magic bytes для валидации?)
@@ -30,6 +31,9 @@ const ShortenedLinkSchema: Schema<IShortenedLink, IShortenedLinkModel> = new Sch
             type: Schema.Types.ObjectId,
             ref: 'User',
             index: true,
+        },
+        guestId: {
+            type: String,
         },
         targetType: {
             type: String,

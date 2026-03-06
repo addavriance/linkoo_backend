@@ -5,7 +5,8 @@ import {env} from '@/config/env';
 import {asyncHandler} from '@/utils/asyncHandler';
 
 export const createLink = asyncHandler(async (req: Request, res: Response) => {
-    const link = await linkService.createLink(req.body, req.userId);
+    const guestId = req.headers['x-user-id']?.toString();
+    const link = await linkService.createLink(req.body, req.userId, guestId);
 
     const publicLink = {
         slug: link.slug,
