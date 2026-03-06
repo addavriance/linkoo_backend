@@ -1,21 +1,4 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-
-const UPLOAD_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'avatars');
-
-const storage = multer.diskStorage({
-    destination: (_req, _file, cb) => {
-        if (!fs.existsSync(UPLOAD_DIR)) {
-            fs.mkdirSync(UPLOAD_DIR, {recursive: true});
-        }
-        cb(null, UPLOAD_DIR);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        cb(null, `${req.userId}-${Date.now()}${ext}`);
-    },
-});
 
 const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -27,7 +10,7 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 };
 
 export const avatarUpload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     fileFilter,
-    limits: {fileSize: 5 * 1024 * 1024}, // 5MB
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });

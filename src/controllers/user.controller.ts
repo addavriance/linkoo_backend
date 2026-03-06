@@ -1,6 +1,5 @@
 import {Request, Response} from 'express';
 import path from 'path';
-import fs from 'fs';
 import {IUser, User} from '@/models/User';
 import {Card} from '@/models/Card';
 import {ShortenedLink} from '@/models/ShortenedLink';
@@ -8,8 +7,8 @@ import {RefreshToken} from '@/models/RefreshToken';
 import {successResponse} from '@/utils/response';
 import {AppError} from '@/utils/errors';
 import {UpdateUserInput} from '@/validators/auth.validator';
-import {env} from '@/config/env';
 import {asyncHandler} from '@/utils/asyncHandler';
+import {uploadFile, deleteFile} from '@/services/storage.service';
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
     const user = await User.findById(req.userId).select('-__v');
@@ -62,16 +61,13 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
         throw new AppError('User not found', 404);
     }
 
-    // Удалить старый файл, если он локальный (не OAuth-аватар)
-    if (user.profile.avatar && user.profile.avatar.includes('/uploads/avatars/')) {
-        const oldFilePath = path.resolve(__dirname, '..', '..', 'uploads', 'avatars', path.basename(user.profile.avatar));
-        if (fs.existsSync(oldFilePath)) {
-            fs.unlinkSync(oldFilePath);
-        }
+    if (user.profile.avatar) {
+        await deleteFile(user.profile.avatar).catch(() => {});
     }
 
-    const origin = new URL(env.API_URL).origin;
-    const avatarUrl = `${origin}/uploads/avatars/${req.file.filename}`;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const filename = `${req.userId}-${Date.now()}${ext}`;
+    const avatarUrl = await uploadFile(req.file.buffer, filename, req.file.mimetype);
 
     user.profile.avatar = avatarUrl;
     await user.save();

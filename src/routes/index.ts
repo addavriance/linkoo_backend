@@ -6,6 +6,7 @@ import linkRoutes from './link.routes';
 import paymentRoutes from './payment.routes';
 import analyticsRoutes from './analytics.routes';
 import adminRoutes from './admin.routes';
+import imageRoutes from './image.routes';
 import * as cardController from '../controllers/card.controller';
 
 const router = Router();
@@ -17,6 +18,7 @@ router.use('/links', linkRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/admin', adminRoutes);
+router.use('/images', imageRoutes);
 
 /**
  * @swagger

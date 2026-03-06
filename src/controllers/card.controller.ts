@@ -1,8 +1,11 @@
 import {Request, Response} from 'express';
+import path from 'path';
 import * as cardService from '../services/card.service';
 import * as analyticsService from '../services/analytics.service';
 import {successResponse, paginatedResponse} from '@/utils/response';
 import {asyncHandler} from '@/utils/asyncHandler';
+import {AppError} from '@/utils/errors';
+import {uploadFile} from '@/services/storage.service';
 
 export const createCard = asyncHandler(async (req: Request, res: Response) => {
     const card = await cardService.createCard(req.userId!, req.body);
@@ -67,6 +70,18 @@ export const getCardBySubdomain = asyncHandler(async (req: Request, res: Respons
     const {subdomain} = req.params;
     const card = await cardService.getCardBySubdomain(subdomain);
     res.json(successResponse(card));
+});
+
+export const uploadCardImage = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) {
+        throw new AppError('No file uploaded', 400);
+    }
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const filename = `${req.userId}-${Date.now()}${ext}`;
+    const url = await uploadFile(req.file.buffer, filename, req.file.mimetype, 'cards');
+
+    res.json(successResponse({ url }));
 });
 
 export const getPublicCards = asyncHandler(async (req: Request, res: Response) => {

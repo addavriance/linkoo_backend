@@ -28,6 +28,10 @@ const envSchema = z.object({
     YUKASSA_SHOP_ID: z.string().optional(),
     YUKASSA_SECRET_KEY: z.string().optional(),
     YUKASSA_RETURN_URL: z.string().url().optional(),
+
+    S3_BUCKET: z.string().optional(),
+    S3_ACCESS_KEY: z.string().optional(),
+    S3_SECRET_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

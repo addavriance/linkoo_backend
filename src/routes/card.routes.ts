@@ -4,6 +4,7 @@ import {authenticate, optionalAuth} from '@/middleware/auth.middleware';
 import {checkCardLimit, requirePaid} from '@/middleware/accountType';
 import {viewLimiter} from '@/middleware/rateLimiter';
 import {validate} from '@/middleware/validator';
+import {avatarUpload} from '@/middleware/upload.middleware';
 import {
     createCardSchema,
     updateCardSchema,
@@ -26,6 +27,8 @@ router.get(
 router.post('/:id/view', viewLimiter, cardController.trackView);
 
 router.use(authenticate);
+
+router.post('/upload-image', avatarUpload.single('image'), cardController.uploadCardImage);
 
 router.get('/', cardController.getMyCards);
 
