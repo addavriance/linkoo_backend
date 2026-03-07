@@ -8,7 +8,10 @@ function makeStore(prefix: string) {
     if (!client) return undefined;
     return new RedisStore({
         prefix: `rl:${prefix}:`,
-        sendCommand: (...args: string[]) => client.call(...args) as any,
+        sendCommand: (...args: string[]) => {
+            const [command, ...rest] = args;
+            return client.call(command, ...rest) as any;
+        }
     });
 }
 
