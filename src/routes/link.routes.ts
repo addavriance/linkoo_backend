@@ -17,8 +17,8 @@ router.get('/:slug', validate(getLinkSchema), linkController.getLink);
 
 router.post(
     '/',
-    checkTOTP,
     optionalAuth,
+    checkTOTP,
     linkCreationLimiter,
     checkSubdomainAccess,
     validate(createLinkSchema),

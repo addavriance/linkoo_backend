@@ -59,7 +59,7 @@ export const checkSubdomainAccess = (
 };
 
 export const checkTOTP = (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.user) {
+    if (!req.userId) {
         const uid = req.headers['x-user-id']?.toString();
         const code = req.headers['x-totp-code']?.toString();
         const timestamp = parseInt(req.headers['x-timestamp']?.toString()!);
@@ -77,7 +77,7 @@ export const checkTOTP = (req: Request, _res: Response, next: NextFunction) => {
         if (!validationResult.isValid) {
             throw new AppError('Request insecure', 403);
         }
-
-        next();
     }
+
+    next();
 }
