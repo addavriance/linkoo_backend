@@ -7,13 +7,27 @@ on:
       - '**.md'
       - '.gitignore'
       - 'LICENSE'
-      - 'docs/**'   
-    
+      - 'docs/**'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
+      - name: Record start time
+        id: timer
+        run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Notify Telegram — push
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TG_CHAT_ID }}
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          format: html
+          disable_web_page_preview: true
+          message: |
+            ${{ github.event.head_commit.author.name }} pushed to branch <a href="${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}">${{ github.ref_name }}</a> of <a href="${{ github.server_url }}/${{ github.repository }}">linkoo_backend</a> (<a href="${{ github.event.compare }}">Compare changes</a>)
+
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
@@ -35,10 +49,27 @@ jobs:
             echo "📦 Copying shared-utils to build context..."
             rm -rf ./linkoo_shared
             cp -r /home/${{ secrets.SERVER_USER }}/linkoo_shared ./linkoo_shared
-            
+
             cd /home/${{ secrets.SERVER_USER }}
-            
+
             docker compose build backend
             docker compose up -d --no-build backend
             docker image prune -f
-            echo "✅ Backend deployed at $(date)"
+
+      - name: Calculate duration
+        id: duration
+        if: always()
+        run: |
+          ELAPSED=$(( $(date +%s) - ${{ steps.timer.outputs.start }} ))
+          echo "elapsed=$(printf '%02d:%02d' $((ELAPSED/60)) $((ELAPSED%60)))" >> $GITHUB_OUTPUT
+
+      - name: Notify Telegram — result
+        if: always()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TG_CHAT_ID }}
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          format: html
+          disable_web_page_preview: true
+          message: |
+            ${{ job.status == 'success' && '✅' || '❌' }} <a href="${{ github.server_url }}/${{ github.repository }}">linkoo_backend</a>: Pipeline <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">#${{ github.run_number }}</a> of branch <a href="${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}">${{ github.ref_name }}</a> by ${{ github.event.head_commit.author.name }} (${{ github.actor }}) has ${{ job.status == 'success' && 'passed' || 'failed' }} in ${{ steps.duration.outputs.elapsed }}
