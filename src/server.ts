@@ -2,6 +2,7 @@ import app from './app';
 import {env} from './config/env';
 import {HOUR} from "./constants";
 import {connectDatabase} from './config/database';
+import {connectRedis} from './config/redis';
 import {startTokenCleanup} from "./services/token.service";
 import {startSubscriptionPolling} from "./services/subscription.service";
 import {startMaxSessionsCleanup} from "./websocket/maxAuth.handler";
@@ -9,6 +10,7 @@ import {startMaxSessionsCleanup} from "./websocket/maxAuth.handler";
 const startServer = async () => {
     try {
         await connectDatabase();
+        await connectRedis();
 
         startTokenCleanup(24 * HOUR);
         console.log('Token cleanup service started');

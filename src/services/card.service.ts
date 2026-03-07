@@ -3,6 +3,34 @@ import {CreateCardInput, UpdateCardInput} from '@/validators/card.validator';
 import {NotFoundError, ForbiddenError, ConflictError} from '@/utils/errors';
 import {ShortenedLink} from '@/models/ShortenedLink';
 import {createSlug} from '@/utils/slugGenerator';
+import {getRedisClient} from '@/config/redis';
+
+const CARD_CACHE_TTL = 60; // секунд
+
+async function cacheGet(key: string): Promise<any | null> {
+    try {
+        const redis = getRedisClient();
+        if (!redis) return null;
+        const data = await redis.get(key);
+        return data ? JSON.parse(data) : null;
+    } catch { return null; }
+}
+
+async function cacheSet(key: string, value: any): Promise<void> {
+    try {
+        const redis = getRedisClient();
+        if (!redis) return;
+        await redis.set(key, JSON.stringify(value), 'EX', CARD_CACHE_TTL);
+    } catch {}
+}
+
+async function cacheDel(...keys: string[]): Promise<void> {
+    try {
+        const redis = getRedisClient();
+        if (!redis) return;
+        await redis.del(...keys);
+    } catch {}
+}
 
 export const createCard = async (
     userId: string,
@@ -39,26 +67,30 @@ export const getCardById = async (
     cardId: string,
     requesterId?: string
 ): Promise<ICard & { slug?: string }> => {
-    const card = await Card.findOne({
-        _id: cardId,
-        isActive: true,
-    }) as ICard;
+    const cacheKey = `card:id:${cardId}`;
+    const isOwnerRequest = !!requesterId;
 
-    if (!card) {
-        throw new NotFoundError('Card');
+    if (!isOwnerRequest) {
+        const cached = await cacheGet(cacheKey);
+        if (cached) return cached;
     }
+
+    const card = await Card.findOne({_id: cardId, isActive: true}) as ICard;
+
+    if (!card) throw new NotFoundError('Card');
 
     if (!card.isPublic && card.userId.toString() !== requesterId) {
         throw new ForbiddenError('This card is private');
     }
 
-    // Добавляем slug
-    const link = await ShortenedLink.findOne({
-        cardId: card._id,
-        isActive: true,
-    }).select('slug');
+    const link = await ShortenedLink.findOne({cardId: card._id, isActive: true}).select('slug');
+    const result = Object.assign(card.toObject(), {slug: link?.slug});
 
-    return Object.assign(card.toObject(), { slug: link?.slug });
+    if (card.isPublic && !isOwnerRequest) {
+        await cacheSet(cacheKey, result);
+    }
+
+    return result;
 };
 
 export const getUserCards = async (
@@ -96,21 +128,18 @@ export const updateCard = async (
     userId: string,
     data: UpdateCardInput
 ): Promise<ICard> => {
-    const card = await Card.findOne({
-        _id: cardId,
-        isActive: true,
-    }) as ICard;
+    const card = await Card.findOne({_id: cardId, isActive: true}) as ICard;
 
-    if (!card) {
-        throw new NotFoundError('Card');
-    }
+    if (!card) throw new NotFoundError('Card');
+    if (card.userId.toString() !== userId) throw new ForbiddenError('You can only edit your own cards');
 
-    if (card.userId.toString() !== userId) {
-        throw new ForbiddenError('You can only edit your own cards');
-    }
-
+    const oldSubdomain = card.subdomain;
     Object.assign(card, data);
     await card.save();
+
+    await cacheDel(`card:id:${cardId}`);
+    if (oldSubdomain) await cacheDel(`card:subdomain:${oldSubdomain}`);
+    if (card.subdomain && card.subdomain !== oldSubdomain) await cacheDel(`card:subdomain:${card.subdomain}`);
 
     return card;
 };
@@ -119,21 +148,16 @@ export const deleteCard = async (
     cardId: string,
     userId: string
 ): Promise<void> => {
-    const card = await Card.findOne({
-        _id: cardId,
-        isActive: true,
-    }) as ICard;
+    const card = await Card.findOne({_id: cardId, isActive: true}) as ICard;
 
-    if (!card) {
-        throw new NotFoundError('Card');
-    }
-
-    if (card.userId.toString() !== userId) {
-        throw new ForbiddenError('You can only delete your own cards');
-    }
+    if (!card) throw new NotFoundError('Card');
+    if (card.userId.toString() !== userId) throw new ForbiddenError('You can only delete your own cards');
 
     card.isActive = false;
     await card.save();
+
+    await cacheDel(`card:id:${cardId}`);
+    if (card.subdomain) await cacheDel(`card:subdomain:${card.subdomain}`);
 };
 
 export const incrementViewCount = async (cardId: string): Promise<void> => {
@@ -181,13 +205,20 @@ export const removeCardSubdomain = async (
 export const getCardBySubdomain = async (
     subdomain: string
 ): Promise<ICard & { slug?: string }> => {
+    const cacheKey = `card:subdomain:${subdomain}`;
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
     const card = await Card.findOne({subdomain, isActive: true}) as ICard;
 
     if (!card) throw new NotFoundError('Card');
     if (!card.isPublic) throw new ForbiddenError('This card is private');
 
     const link = await ShortenedLink.findOne({cardId: card._id, isActive: true}).select('slug');
-    return Object.assign(card.toObject(), {slug: link?.slug});
+    const result = Object.assign(card.toObject(), {slug: link?.slug});
+
+    await cacheSet(cacheKey, result);
+    return result;
 };
 
 export const getPublicCards = async (
