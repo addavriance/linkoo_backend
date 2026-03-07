@@ -1,10 +1,14 @@
 import {z} from 'zod';
+import {validateRawData} from '@local/linkoo_shared';
 
 export const createLinkSchema = z.object({
     body: z
         .object({
             targetType: z.enum(['url', 'card']),
-            rawData: z.string().optional(),
+            rawData: z.string().refine(
+                (val) => val === undefined || validateRawData(val),
+                { message: 'rawData is not valid compressed card data' }
+            ).optional(),
             cardId: z
                 .string()
                 .regex(/^[0-9a-fA-F]{24}$/, 'Invalid card ID')
