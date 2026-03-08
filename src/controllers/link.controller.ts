@@ -1,8 +1,47 @@
 import {Request, Response} from 'express';
 import * as linkService from '../services/link.service';
+import * as cardService from '../services/card.service';
 import {successResponse, paginatedResponse} from '@/utils/response';
 import {env} from '@/config/env';
 import {asyncHandler} from '@/utils/asyncHandler';
+
+function escapeHtml(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildOgHtml(card: { name?: string; title?: string; description?: string; avatar?: string }, redirectUrl: string): string {
+    const ogTitle = escapeHtml(card.name ?? 'Linkoo');
+    const ogDescription = escapeHtml([card.title, card.description].filter(Boolean).join(' · ') || 'Цифровая визитка на Linkoo');
+    const ogImage = card.avatar ? escapeHtml(card.avatar) : '';
+    const ogUrl = escapeHtml(redirectUrl);
+
+    return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="${ogTitle}">
+<meta property="og:description" content="${ogDescription}">
+<meta property="og:url" content="${ogUrl}">
+${ogImage ? `<meta property="og:image" content="${ogImage}">` : ''}
+<meta name="twitter:card" content="${ogImage ? 'summary_large_image' : 'summary'}">
+<meta name="twitter:title" content="${ogTitle}">
+<meta name="twitter:description" content="${ogDescription}">
+${ogImage ? `<meta name="twitter:image" content="${ogImage}">` : ''}
+<meta http-equiv="refresh" content="0;url=${ogUrl}">
+<script>location.replace(${JSON.stringify(redirectUrl)})</script>
+</head>
+<body></body>
+</html>`;
+}
+
+function extractSubdomain(host: string): string | undefined {
+    const parts = host.split('.');
+    if (parts.length > 2 && !['www', 'api'].includes(parts[0])) {
+        return parts[0];
+    }
+    return undefined;
+}
 
 export const createLink = asyncHandler(async (req: Request, res: Response) => {
     const guestId = req.headers['x-user-id']?.toString();
@@ -86,20 +125,38 @@ export const getLinkByCardId = asyncHandler(async (req: Request, res: Response) 
 
 export const redirect = asyncHandler(async (req: Request, res: Response) => {
     const {slug} = req.params;
-
-    const host = req.hostname;
-    let subdomain: string | undefined;
-
-    const parts = host.split('.');
-    if (parts.length > 2 && !['www', 'api'].includes(parts[0])) {
-        subdomain = parts[0];
-    }
+    const subdomain = extractSubdomain(req.hostname);
 
     const target = await linkService.getRedirectTarget(slug, subdomain);
 
-    if (target.isCard) {
-        return res.redirect(`${env.FRONTEND_URL}/${slug}`);
+    if (target.isCard && target.cardId) {
+        const frontendUrl = `${env.FRONTEND_URL}/${slug}`;
+        try {
+            const card = await cardService.getCardById(target.cardId);
+            return res.send(buildOgHtml(card, frontendUrl));
+        } catch {
+            return res.redirect(frontendUrl);
+        }
     }
 
     res.redirect(`${env.FRONTEND_URL}/view?card=${target.url}`);
+});
+
+export const redirectSubdomain = asyncHandler(async (req: Request, res: Response) => {
+    const subdomain = extractSubdomain(req.hostname);
+
+    if (!subdomain) {
+        return res.redirect(env.FRONTEND_URL);
+    }
+
+    try {
+        const card = await cardService.getCardBySubdomain(subdomain);
+        const link = await linkService.getLinkByCardId(card._id.toString(), card.userId.toString()).catch(() => null);
+        const frontendUrl = link?.slug
+            ? `${env.FRONTEND_URL}/${link.slug}`
+            : env.FRONTEND_URL;
+        return res.send(buildOgHtml(card, frontendUrl));
+    } catch {
+        return res.redirect(env.FRONTEND_URL);
+    }
 });
