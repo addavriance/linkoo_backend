@@ -9,25 +9,44 @@ function escapeHtml(str: string): string {
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function buildOgHtml(card: { name?: string; title?: string; description?: string; avatar?: string }, redirectUrl: string): string {
-    const ogTitle = escapeHtml(card.name ?? 'Linkoo');
-    const ogDescription = escapeHtml([card.title, card.description].filter(Boolean).join(' · ') || 'Цифровая визитка на Linkoo');
+function buildOgHtml(card: { name?: string; title?: string; description?: string; avatar?: string; email?: string; website?: string; company?: string }, redirectUrl: string): string {
+    const name = card.name ?? 'Linkoo';
+    const ogTitle = escapeHtml(name);
+    const descriptionParts = [card.title, card.description].filter(Boolean).join(' · ');
+    const ogDescription = escapeHtml(descriptionParts || 'Цифровая визитка на Linkoo');
     const ogImage = card.avatar ? escapeHtml(card.avatar) : '';
     const ogUrl = escapeHtml(redirectUrl);
+
+    const jsonLd = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name,
+        ...(card.title && {jobTitle: card.title}),
+        ...(card.description && {description: card.description}),
+        ...(card.avatar && {image: card.avatar}),
+        ...(card.email && {email: card.email}),
+        ...(card.website && {url: card.website}),
+        ...(card.company && {worksFor: {'@type': 'Organization', name: card.company}}),
+        sameAs: redirectUrl,
+    });
 
     return `<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<title>${ogTitle} — Linkoo</title>
+<meta name="description" content="${ogDescription}">
 <meta property="og:type" content="profile">
 <meta property="og:title" content="${ogTitle}">
 <meta property="og:description" content="${ogDescription}">
 <meta property="og:url" content="${ogUrl}">
+<link rel="canonical" href="${ogUrl}">
 ${ogImage ? `<meta property="og:image" content="${ogImage}">` : ''}
 <meta name="twitter:card" content="${ogImage ? 'summary_large_image' : 'summary'}">
 <meta name="twitter:title" content="${ogTitle}">
 <meta name="twitter:description" content="${ogDescription}">
 ${ogImage ? `<meta name="twitter:image" content="${ogImage}">` : ''}
+<script type="application/ld+json">${jsonLd}</script>
 <meta http-equiv="refresh" content="0;url=${ogUrl}">
 <script>location.replace(${JSON.stringify(redirectUrl)})</script>
 </head>
