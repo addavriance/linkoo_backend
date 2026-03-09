@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {validateRawData} from '@local/linkoo_shared';
+import {validateRawData} from '@addavriance/linkoo_shared';
 
 export const createLinkSchema = z.object({
     body: z

@@ -1,7 +1,7 @@
 import {Request, Response, NextFunction} from 'express';
 import {AppError} from '@/utils/errors';
 import {Card} from '@/models/Card';
-import {ServerTOTPValidator} from '@local/linkoo_shared'
+import {ServerTOTPValidator} from '@addavriance/linkoo_shared'
 
 const validator = new ServerTOTPValidator({
     codeLength: 10,
