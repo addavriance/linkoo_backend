@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '@/app';
 import { connectTestDB, disconnectTestDB, clearTestDB } from './helpers/db';
-import { createTestUser } from './helpers/auth';
+import { createTestUser, generateGuestTOTP } from './helpers/auth';
 
 beforeAll(async () => {
     await connectTestDB();
@@ -18,14 +18,16 @@ afterEach(async () => {
 describe('Links endpoints', () => {
     describe('POST /api/links', () => {
         it('should return 201 and create a url link when authenticated', async () => {
-            // const { accessToken } = await createTestUser();
+            const totp = generateGuestTOTP('test-guest');
 
             const res = await request(app)
                 .post('/api/links')
-                // .set('Authorization', `Bearer ${accessToken}`)
+                .set('X-User-Id', totp.uid)
+                .set('X-TOTP-Code', totp.code)
+                .set('X-Timestamp', String(totp.timestamp))
                 .send({
                     targetType: 'url',
-                    rawData: 'N4IgdiBcKFggh8II...',
+                    rawData: 'N4IgdiBcKBgghMIIBhBC8ICANCALgCyiA5gE4CGAJgJYCmYGA+gPYDGFRE6AbmQM5kBGZANmQwBPXAG06PAFYUGGAAQB5abIwBdEAF8gA',
                 });
 
             expect(res.status).toBe(201);
@@ -36,14 +38,16 @@ describe('Links endpoints', () => {
 
     describe('GET /api/links/:slug', () => {
         it('should return 200 for an existing link slug', async () => {
-            // const { accessToken } = await createTestUser();
+            const totp = generateGuestTOTP('test-guest');
 
             const created = await request(app)
                 .post('/api/links')
-                // .set('Authorization', `Bearer ${accessToken}`)
+                .set('X-User-Id', totp.uid)
+                .set('X-TOTP-Code', totp.code)
+                .set('X-Timestamp', String(totp.timestamp))
                 .send({
                     targetType: 'url',
-                    rawData: 'N4IgdiBcKFggh8II...',
+                    rawData: 'N4IgdiBcKBgghMIIBhBC8ICANCALgCyiA5gE4CGAJgJYCmYGA+gPYDGFRE6AbmQM5kBGZANmQwBPXAG06PAFYUGGAAQB5abIwBdEAF8gA',
                 });
 
             const slug = created.body.data.slug;
@@ -57,15 +61,16 @@ describe('Links endpoints', () => {
 
     describe('DELETE /api/links/:slug', () => {
         it('should return 401 without authorization', async () => {
-            // Create link with auth, then try to delete without auth
-            const { accessToken } = await createTestUser();
+            const totp = generateGuestTOTP('test-guest');
 
             const created = await request(app)
                 .post('/api/links')
-                .set('Authorization', `Bearer ${accessToken}`)
+                .set('X-User-Id', totp.uid)
+                .set('X-TOTP-Code', totp.code)
+                .set('X-Timestamp', String(totp.timestamp))
                 .send({
                     targetType: 'url',
-                    rawData: 'https://example.com/delete-test',
+                    rawData: 'N4IgdiBcKBgghMIIBhBC8ICANCALgCyiA5gE4CGAJgJYCmYGA+gPYDGFRE6AbmQM5kBGZANmQwBPXAG06PAFYUGGAAQB5abIwBdEAF8gA',
                 });
 
             const slug = created.body.data.slug;
@@ -76,21 +81,21 @@ describe('Links endpoints', () => {
         });
 
         it('should return 200 and delete the link when authorized', async () => {
-            // const { accessToken } = await createTestUser();
+            const { accessToken } = await createTestUser();
 
             const created = await request(app)
                 .post('/api/links')
-                // .set('Authorization', `Bearer ${accessToken}`)
+                .set('Authorization', `Bearer ${accessToken}`)
                 .send({
                     targetType: 'url',
-                    rawData: 'https://example.com/delete-auth-test',
+                    rawData: 'N4IgdiBcKBgghMIIBhBC8ICANCALgCyiA5gE4CGAJgJYCmYGA+gPYDGFRE6AbmQM5kBGZANmQwBPXAG06PAFYUGGAAQB5abIwBdEAF8gA',
                 });
 
             const slug = created.body.data.slug;
 
             const res = await request(app)
                 .delete(`/api/links/${slug}`)
-                // .set('Authorization', `Bearer ${accessToken}`);
+                .set('Authorization', `Bearer ${accessToken}`);
 
             expect(res.status).toBe(200);
         });

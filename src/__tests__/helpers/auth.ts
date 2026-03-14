@@ -19,6 +19,18 @@ interface CreateTestUserOptions {
     providerId?: string;
 }
 
+export const generateGuestTOTP = (uid: string) => {
+    const codeLength = 10;
+    const intervalSeconds = 300;
+    const secretSalt = 'totp_salt_2024';
+    const timestamp = Date.now();
+    const interval = Math.floor(timestamp / 1000 / intervalSeconds);
+    const data = `${uid}:${interval}:${secretSalt}`;
+    const hash = crypto.createHash('sha256').update(data).digest('hex');
+    const code = hash.substring(0, codeLength).toUpperCase();
+    return { uid, code, timestamp };
+};
+
 export const createTestUser = async (options: CreateTestUserOptions = {}): Promise<TestUser> => {
     const {
         email = `test-${crypto.randomBytes(4).toString('hex')}@example.com`,
