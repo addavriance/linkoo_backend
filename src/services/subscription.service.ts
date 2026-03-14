@@ -121,6 +121,8 @@ export const runSubscriptionJobsImmediate = async (): Promise<void> => {
 }
 
 export const startSubscriptionPolling = (intervalMs: number = 24 * HOUR): void => {
+    console.log('Subscription service started');
+
     pollImmediate(runSubscriptionJobs, intervalMs);
 }
 

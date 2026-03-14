@@ -13,11 +13,8 @@ const startServer = async () => {
         await connectRedis();
 
         startTokenCleanup(24 * HOUR);
-        console.log('Token cleanup service started');
         startSubscriptionPolling(24 * HOUR);
-        console.log('Subscription service started');
         startMaxSessionsCleanup();
-        console.log('MAX Auth session cleanup service started');
 
         const port = parseInt(env.PORT);
 

@@ -128,5 +128,7 @@ export const cleanupExpiredTokens = async (): Promise<void> => {
 };
 
 export const startTokenCleanup = (intervalMs: number = 24 * HOUR): void => {
+    console.log('Token cleanup service started');
+
     pollImmediate(cleanupExpiredTokens, intervalMs);
 };

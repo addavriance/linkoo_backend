@@ -1,7 +1,7 @@
 import {Request, Response} from 'express';
 import axios from 'axios';
 import {randomUUID} from 'crypto';
-import {Payment} from '@/models/Payment';
+import {IPayment, Payment} from '@/models/Payment';
 import {User} from '@/models/User';
 import {env} from '@/config/env';
 import {AppError} from '@/utils/errors';
@@ -135,7 +135,7 @@ export const getPaymentStatus = asyncHandler(async (req: Request, res: Response)
     const {paymentKey} = req.params;
 
     try {
-        const paymentDoc = await Payment.findOne({idempotenceKey: paymentKey});
+        const paymentDoc = await Payment.findOne({idempotenceKey: paymentKey}) as IPayment;
 
         if (!paymentDoc) {
             throw new AppError('Платеж не найден', 404);

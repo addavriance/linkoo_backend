@@ -56,6 +56,8 @@ const cleanupExpiredSessions = () => {
 };
 
 export const startMaxSessionsCleanup = (intervalMs: number = 30 * SECOND): void => {
+    console.log('MAX Auth session cleanup service started');
+
     pollImmediate(cleanupExpiredSessions, intervalMs);
 };
 
