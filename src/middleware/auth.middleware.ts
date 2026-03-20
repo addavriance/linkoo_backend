@@ -1,5 +1,5 @@
 import {Request, Response, NextFunction} from 'express';
-import {verifyAccessToken, verifyRefreshToken} from '@/services/token.service';
+import {verifyAccessToken} from '@/services/token.service';
 import {AppError} from '@/utils/errors';
 import {User, IUser} from '@/models/User';
 
@@ -17,8 +17,6 @@ export const authenticate = async (
 
         const token = authHeader.substring(7);
         const payload = verifyAccessToken(token);
-
-        await verifyRefreshToken(payload.sessionId, payload.userId);
 
         req.userId = payload.userId;
         req.accountType = payload.accountType;
