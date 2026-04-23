@@ -1,5 +1,6 @@
 import mongoose, {Schema, Document, Model} from 'mongoose';
 import {SocialPlatform} from '@/types';
+import {makeSchemaOptions} from '@/utils/schemaOptions';
 
 export interface ISocial {
     platform: SocialPlatform;
@@ -204,9 +205,7 @@ const CardSchema: Schema<ICard, ICardModel> = new Schema<ICard, ICardModel>(
         },
         lastViewedAt: Date,
     },
-    {
-        timestamps: true,
-    }
+    makeSchemaOptions(['isActive'])
 );
 
 CardSchema.index({userId: 1, isActive: 1});

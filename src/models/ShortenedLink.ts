@@ -1,5 +1,6 @@
 import mongoose, {Schema, Document, Model} from 'mongoose';
 import {LinkTargetType} from '@/types';
+import {makeSchemaOptions} from '@/utils/schemaOptions';
 
 export interface IShortenedLink extends Document {
     _id: mongoose.Types.ObjectId;
@@ -70,9 +71,7 @@ const ShortenedLinkSchema: Schema<IShortenedLink, IShortenedLinkModel> = new Sch
         },
         expiresAt: Date,
     },
-    {
-        timestamps: true,
-    }
+    makeSchemaOptions(['isActive'])
 );
 
 ShortenedLinkSchema.index(

@@ -1,5 +1,6 @@
 import mongoose, {Schema, Document, model, Model} from 'mongoose';
 import {OAuthProvider, AccountType, UserRole} from '@/types';
+import {makeSchemaOptions} from '@/utils/schemaOptions';
 
 export interface IUserProfile {
     name: string;
@@ -121,9 +122,7 @@ const UserSchema: Schema<IUser, IUserModel> = new Schema<IUser, IUserModel>(
             default: Date.now,
         },
     },
-    {
-        timestamps: true,
-    }
+    makeSchemaOptions(['isActive'])
 );
 
 UserSchema.index({provider: 1, providerId: 1}, {unique: true});

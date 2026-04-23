@@ -1,4 +1,5 @@
 import mongoose, {Schema, Document, model, Model} from 'mongoose';
+import {makeSchemaOptions} from '@/utils/schemaOptions';
 
 export interface IPaymentMethod {
     id: string;
@@ -100,9 +101,7 @@ const PaymentSchema: Schema<IPayment, IPaymentModel> = new Schema<IPayment, IPay
             type: Schema.Types.Mixed,
         },
     },
-    {
-        timestamps: true,
-    }
+    makeSchemaOptions()
 );
 
 PaymentSchema.index({userId: 1, createdAt: -1});

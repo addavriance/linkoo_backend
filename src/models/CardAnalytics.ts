@@ -1,4 +1,5 @@
 import mongoose, {Schema, Document, Model} from 'mongoose';
+import {makeSchemaOptions} from '@/utils/schemaOptions';
 
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
@@ -80,7 +81,7 @@ const CardAnalyticsSchema = new Schema<ICardAnalytics, ICardAnalyticsModel>(
             default: [],
         },
     },
-    {timestamps: true}
+    makeSchemaOptions()
 );
 
 export const CardAnalytics = mongoose.model<ICardAnalytics, ICardAnalyticsModel>(
