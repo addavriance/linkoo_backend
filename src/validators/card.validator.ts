@@ -17,7 +17,7 @@ const socialPlatformEnum = z.enum([
 
 const socialSchema = z.object({
     platform: socialPlatformEnum,
-    link: z.string().trim().min(1).max(500),
+    link: z.string().trim().max(500),
 });
 
 const customThemeSchema = z.object({
@@ -54,7 +54,11 @@ export const createCardSchema = z.object({
         company: z.string().trim().max(100).optional(),
         location: z.string().trim().max(100).optional(),
         avatar: z.string().url('Invalid avatar URL').optional().or(z.literal('')),
-        socials: z.array(socialSchema).max(12).default([]),
+        socials: z
+            .array(socialSchema)
+            .max(12)
+            .default([])
+            .transform((arr) => arr.filter((s) => s.link.length > 0)),
         theme: z.string().default('light_minimal'),
         customTheme: customThemeSchema.optional(),
         visibility: visibilitySchema.optional(),
