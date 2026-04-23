@@ -1,21 +1,31 @@
 import {Request, Response, NextFunction} from 'express';
 import {AppError} from '@/utils/errors';
 import {Card} from '@/models/Card';
+import {User} from '@/models/User';
 import {ServerTOTPValidator} from '@addavriance/linkoo_shared'
 
 const validator = new ServerTOTPValidator({
     codeLength: 10,
 });
 
-export const requirePaid = (
+export const requirePaid = async (
     req: Request,
     _res: Response,
     next: NextFunction
 ) => {
-    if (req.accountType !== 'paid') {
+    try {
+        if (req.accountType === 'paid') return next();
+
+        const user = await User.findById(req.userId).select('accountType').lean();
+        if (user?.accountType === 'paid') {
+            req.accountType = 'paid';
+            return next();
+        }
+
         throw new AppError('This feature requires a paid account', 403);
+    } catch (error) {
+        next(error);
     }
-    next();
 };
 
 export const checkCardLimit = async (
@@ -24,7 +34,11 @@ export const checkCardLimit = async (
     next: NextFunction
 ) => {
     try {
-        if (req.accountType === 'paid') {
+        if (req.accountType === 'paid') return next();
+
+        const user = await User.findById(req.userId).select('accountType').lean();
+        if (user?.accountType === 'paid') {
+            req.accountType = 'paid';
             return next();
         }
 
@@ -47,15 +61,24 @@ export const checkCardLimit = async (
     }
 };
 
-export const checkSubdomainAccess = (
+export const checkSubdomainAccess = async (
     req: Request,
     _res: Response,
     next: NextFunction
 ) => {
-    if (req.body.subdomain && req.accountType !== 'paid') {
+    try {
+        if (!req.body.subdomain || req.accountType === 'paid') return next();
+
+        const user = await User.findById(req.userId).select('accountType').lean();
+        if (user?.accountType === 'paid') {
+            req.accountType = 'paid';
+            return next();
+        }
+
         throw new AppError('Custom subdomains require a paid account', 403);
+    } catch (error) {
+        next(error);
     }
-    next();
 };
 
 export const checkTOTP = (req: Request, _res: Response, next: NextFunction) => {
